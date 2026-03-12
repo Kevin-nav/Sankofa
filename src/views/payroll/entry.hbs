@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{title}} | Sankofa Internal Platform</title>
+    <link rel="stylesheet" href="/styles/app.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      {{> sidebar}}
+      <section class="workspace">
+        {{> header}}
+
+        <section class="content-card">
+          <div class="detail-grid">
+            <article class="detail-card">
+              <span class="detail-kicker">Employee</span>
+              <h2>{{entry.employee.fullName}}</h2>
+              <div class="detail-stack">
+                <div><strong>Employee code</strong><span>{{entry.employee.employeeCode}}</span></div>
+                <div><strong>Department</strong><span>{{entry.employee.department}}</span></div>
+                <div><strong>Job title</strong><span>{{entry.employee.jobTitle}}</span></div>
+                <div><strong>Batch</strong><span>{{entry.batch.quarter}} {{entry.batch.year}}</span></div>
+              </div>
+            </article>
+
+            <article class="detail-card">
+              <span class="detail-kicker">Payroll Line Item</span>
+              <h2>Compensation breakdown</h2>
+              <div class="detail-stack">
+                <div><strong>Base salary</strong><span>{{entry.baseSalary}}</span></div>
+                <div><strong>Allowances</strong><span>{{entry.allowances}}</span></div>
+                <div><strong>Deductions</strong><span>{{entry.deductions}}</span></div>
+                <div><strong>Tax</strong><span>{{entry.tax}}</span></div>
+                <div><strong>Net pay</strong><span>{{entry.netPay}}</span></div>
+                <div><strong>Flagged</strong><span>{{entry.isFlagged}}</span></div>
+                <div><strong>Notes</strong><span>{{entry.notes}}</span></div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

@@ -22,6 +22,7 @@ model User {
   department   String
   status       String
   lastLogin    DateTime?
+  createdBatches PayrollBatch[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -37,6 +38,42 @@ model Employee {
   bankName            String
   maskedAccountNumber String
   employmentStatus    String
+  payrollEntries      PayrollEntry[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model PayrollBatch {
+  id         Int            @id @default(autoincrement())
+  batchCode  String         @unique
+  quarter    String
+  year       Int
+  status     String
+  submittedAt DateTime?
+  totalGross Float
+  totalNet   Float
+  createdById Int
+  createdBy  User           @relation(fields: [createdById], references: [id])
+  entries    PayrollEntry[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model PayrollEntry {
+  id          Int          @id @default(autoincrement())
+  batchId     Int
+  employeeId  Int
+  baseSalary  Float
+  allowances  Float
+  deductions  Float
+  tax         Float
+  netPay      Float
+  notes       String?
+  isFlagged   Boolean      @default(false)
+  batch       PayrollBatch @relation(fields: [batchId], references: [id])
+  employee    Employee     @relation(fields: [employeeId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([batchId, employeeId])
 }

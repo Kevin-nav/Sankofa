@@ -4,10 +4,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmployeesModule } from './employees/employees.module';
 import { LayoutModule } from './layout/layout.module';
+import { PayrollModule } from './payroll/payroll.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule, LayoutModule, AuthModule, EmployeesModule],
+  imports: [PrismaModule, LayoutModule, AuthModule, EmployeesModule, PayrollModule],
   controllers: [AppController],
   providers: [AppService],
 })

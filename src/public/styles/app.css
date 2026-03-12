@@ -299,6 +299,10 @@ body {
   overflow-x: auto;
 }
 
+.table-block {
+  margin-top: 22px;
+}
+
 .directory-table {
   width: 100%;
   border-collapse: collapse;

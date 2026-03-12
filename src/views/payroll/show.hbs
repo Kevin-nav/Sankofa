@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{title}} | Sankofa Internal Platform</title>
+    <link rel="stylesheet" href="/styles/app.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      {{> sidebar}}
+      <section class="workspace">
+        {{> header}}
+
+        <section class="content-card">
+          <div class="detail-grid">
+            <article class="detail-card">
+              <span class="detail-kicker">Batch Summary</span>
+              <h2>{{batch.quarter}} {{batch.year}}</h2>
+              <div class="detail-stack">
+                <div><strong>Batch code</strong><span>{{batch.batchCode}}</span></div>
+                <div><strong>Status</strong><span>{{batch.status}}</span></div>
+                <div><strong>Prepared by</strong><span>{{batch.createdBy.name}}</span></div>
+                <div><strong>Submitted at</strong><span>{{batch.submittedAt}}</span></div>
+              </div>
+            </article>
+
+            <article class="detail-card">
+              <span class="detail-kicker">Totals</span>
+              <h2>Compensation totals</h2>
+              <div class="detail-stack">
+                <div><strong>Total gross</strong><span>{{batch.totalGross}}</span></div>
+                <div><strong>Total net</strong><span>{{batch.totalNet}}</span></div>
+                <div><strong>Employee entries</strong><span>{{batch.entries.length}}</span></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="table-wrap table-block">
+            <table class="directory-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>Base salary</th>
+                  <th>Allowances</th>
+                  <th>Tax</th>
+                  <th>Net pay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each batch.entries}}
+                  <tr>
+                    <td>
+                      <a class="table-link" href="/payroll/{{../batch.batchCode}}/entries/{{this.employee.employeeCode}}">{{this.employee.fullName}}</a>
+                      <span class="table-subtle">{{this.employee.employeeCode}}</span>
+                    </td>
+                    <td>{{this.employee.department}}</td>
+                    <td>{{this.baseSalary}}</td>
+                    <td>{{this.allowances}}</td>
+                    <td>{{this.tax}}</td>
+                    <td>{{this.netPay}}</td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

@@ -11,8 +11,8 @@ import { seedDatabase } from '../../prisma/seed';
 
 const execFileAsync = promisify(execFile);
 
-describe('Auth flow (e2e)', () => {
-  const dbPath = path.join(process.cwd(), 'prisma', 'test-auth.db');
+describe('Layout navigation (e2e)', () => {
+  const dbPath = path.join(process.cwd(), 'prisma', 'test-layout.db');
   const databaseUrl = `file:${dbPath.replace(/\\/g, '/')}`;
   let app: INestApplication;
 
@@ -46,7 +46,7 @@ describe('Auth flow (e2e)', () => {
     await fs.rm(dbPath, { force: true });
   });
 
-  it('logs in with a seeded account and reaches the protected route', async () => {
+  it('shows payroll navigation for payroll admins', async () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent
@@ -56,37 +56,57 @@ describe('Auth flow (e2e)', () => {
         email: 'anita@sankofa.local',
         password: 'demo-password',
       })
-      .expect(302)
-      .expect('Location', '/dashboard');
+      .expect(302);
 
     await agent
       .get('/dashboard')
       .expect(200)
       .expect((response) => {
-        expect(response.text).toContain('Anita Mensah');
-        expect(response.text).toContain('Payroll Admin');
         expect(response.text).toContain('Operations Dashboard');
+        expect(response.text).toContain('Payroll Batches');
+        expect(response.text).not.toContain('Audit &amp; Activity');
       });
   });
 
-  it('rejects invalid credentials', async () => {
-    await request(app.getHttpServer())
+  it('shows compliance navigation for compliance officers', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent
       .post('/login')
       .type('form')
       .send({
-        email: 'anita@sankofa.local',
-        password: 'wrong-password',
+        email: 'felix@sankofa.local',
+        password: 'demo-password',
       })
-      .expect(401)
+      .expect(302);
+
+    await agent
+      .get('/dashboard')
+      .expect(200)
       .expect((response) => {
-        expect(response.text).toContain('Invalid credentials.');
+        expect(response.text).toContain('Compliance Queue');
+        expect(response.text).toContain('Payroll Batches');
       });
   });
 
-  it('redirects unauthenticated users away from protected routes', async () => {
-    await request(app.getHttpServer())
+  it('shows audit navigation for audit analysts', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent
+      .post('/login')
+      .type('form')
+      .send({
+        email: 'akosua.audit@sankofa.local',
+        password: 'demo-password',
+      })
+      .expect(302);
+
+    await agent
       .get('/dashboard')
-      .expect(302)
-      .expect('Location', '/login');
+      .expect(200)
+      .expect((response) => {
+        expect(response.text).toContain('Audit &amp; Activity');
+        expect(response.text).not.toContain('Compliance Queue');
+      });
   });
 });

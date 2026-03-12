@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User, UserRole } from '@prisma/client';
-import { SessionUser } from './session.types';
+import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -18,22 +17,5 @@ export class AuthService {
     }
 
     return user;
-  }
-
-  getDashboardGreeting(sessionUser: SessionUser): string {
-    return `Welcome ${sessionUser.name}. Role: ${this.getRoleLabel(sessionUser.role)}`;
-  }
-
-  private getRoleLabel(role: UserRole): string {
-    switch (role) {
-      case UserRole.PAYROLL_ADMIN:
-        return 'Payroll Admin';
-      case UserRole.COMPLIANCE_OFFICER:
-        return 'Compliance Officer';
-      case UserRole.AUDIT_ANALYST:
-        return 'Audit Analyst';
-      default:
-        return 'User';
-    }
   }
 }

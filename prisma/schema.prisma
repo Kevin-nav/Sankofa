@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PAYROLL_ADMIN
+  COMPLIANCE_OFFICER
+  AUDIT_ANALYST
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole
+  department   String
+  status       String
+  lastLogin    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Employee {
+  id                  Int      @id @default(autoincrement())
+  employeeCode        String   @unique
+  fullName            String
+  department          String
+  jobTitle            String
+  payGrade            String
+  taxIdentifier       String
+  bankName            String
+  maskedAccountNumber String
+  employmentStatus    String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

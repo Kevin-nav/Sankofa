@@ -7,6 +7,8 @@ type SeedCounts = {
   employees: number;
   payrollBatches: number;
   payrollEntries: number;
+  complianceReviews: number;
+  complianceFlags: number;
 };
 
 const demoUsers = [
@@ -93,6 +95,8 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
   const prisma = createClient(databaseUrl);
 
   try {
+    await prisma.complianceFlag.deleteMany();
+    await prisma.complianceReview.deleteMany();
     await prisma.payrollEntry.deleteMany();
     await prisma.payrollBatch.deleteMany();
     await prisma.user.deleteMany();
@@ -106,9 +110,12 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
       data: demoEmployees,
     });
 
-    const [anita, employeesForSeed] = await Promise.all([
+    const [anita, felix, employeesForSeed] = await Promise.all([
       prisma.user.findUniqueOrThrow({
         where: { email: 'anita@sankofa.local' },
+      }),
+      prisma.user.findUniqueOrThrow({
+        where: { email: 'felix@sankofa.local' },
       }),
       prisma.employee.findMany({
         orderBy: { employeeCode: 'asc' },
@@ -208,14 +215,88 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
       },
     });
 
-    const [users, employees, payrollBatches, payrollEntries] = await Promise.all([
+    const reviewBatchPrimary = await prisma.payrollBatch.findUniqueOrThrow({
+      where: { batchCode: '2026-Q1-PRIMARY' },
+    });
+    const reviewBatchSecondary = await prisma.payrollBatch.findUniqueOrThrow({
+      where: { batchCode: '2026-Q2-REVIEW' },
+    });
+
+    await prisma.complianceReview.create({
+      data: {
+        batchId: reviewBatchPrimary.id,
+        reviewerId: felix.id,
+        reviewStatus: 'Approved',
+        comments: 'Quarter one controls complete and signed off.',
+        completedChecks: 12,
+        approvedAt: new Date('2026-03-04T14:35:00Z'),
+      },
+    });
+
+    const reviewTwo = await prisma.complianceReview.create({
+      data: {
+        batchId: reviewBatchSecondary.id,
+        reviewerId: felix.id,
+        reviewStatus: 'In Review',
+        comments: 'Allowance changes require supporting evidence before approval.',
+        completedChecks: 8,
+      },
+    });
+
+    const reviewTwoEntries = await prisma.payrollEntry.findMany({
+      where: { batchId: reviewBatchSecondary.id },
+      include: { employee: true },
+    });
+
+    const entryByCode = new Map(
+      reviewTwoEntries.map((entry) => [entry.employee.employeeCode, entry]),
+    );
+
+    await prisma.complianceFlag.createMany({
+      data: [
+        {
+          reviewId: reviewTwo.id,
+          payrollEntryId: entryByCode.get('SK-1001')!.id,
+          severity: 'High',
+          ruleType: 'Allowance Verification',
+          description: 'Retention allowance increase requires supporting approval memo.',
+          resolutionState: 'Open',
+        },
+        {
+          reviewId: reviewTwo.id,
+          payrollEntryId: entryByCode.get('SK-1002')!.id,
+          severity: 'Medium',
+          ruleType: 'Benefits Documentation',
+          description: 'Benefit adjustment note is missing one compliance attachment.',
+          resolutionState: 'Pending Evidence',
+        },
+      ],
+    });
+
+    const [
+      users,
+      employees,
+      payrollBatches,
+      payrollEntries,
+      complianceReviews,
+      complianceFlags,
+    ] = await Promise.all([
       prisma.user.count(),
       prisma.employee.count(),
       prisma.payrollBatch.count(),
       prisma.payrollEntry.count(),
+      prisma.complianceReview.count(),
+      prisma.complianceFlag.count(),
     ]);
 
-    return { users, employees, payrollBatches, payrollEntries };
+    return {
+      users,
+      employees,
+      payrollBatches,
+      payrollEntries,
+      complianceReviews,
+      complianceFlags,
+    };
   } finally {
     await prisma.$disconnect();
   }
@@ -224,7 +305,7 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
 async function main(): Promise<void> {
   const counts = await seedDatabase();
   console.log(
-    `Seeded ${counts.users} users, ${counts.employees} employees, ${counts.payrollBatches} payroll batches, and ${counts.payrollEntries} payroll entries into Sankofa Payroll Platform.`,
+    `Seeded ${counts.users} users, ${counts.employees} employees, ${counts.payrollBatches} payroll batches, ${counts.payrollEntries} payroll entries, ${counts.complianceReviews} compliance reviews, and ${counts.complianceFlags} compliance flags into Sankofa Payroll Platform.`,
   );
 }
 

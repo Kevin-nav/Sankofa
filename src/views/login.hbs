@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sankofa Internal Access</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3efe3;
+        --panel: rgba(252, 249, 240, 0.88);
+        --panel-edge: rgba(82, 65, 42, 0.18);
+        --ink: #1d1811;
+        --muted: #62584b;
+        --accent: #8a3d12;
+        --accent-strong: #5f240b;
+        --line: rgba(61, 46, 29, 0.12);
+        --field: rgba(255, 255, 255, 0.72);
+        --error-bg: rgba(138, 61, 18, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(138, 61, 18, 0.18), transparent 34%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.65), transparent 42%),
+          var(--bg);
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+      }
+
+      .shell {
+        width: min(1040px, 100%);
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, 420px);
+        background: linear-gradient(180deg, rgba(255, 250, 242, 0.82), rgba(248, 243, 232, 0.96));
+        border: 1px solid var(--panel-edge);
+        box-shadow: 0 28px 90px rgba(51, 39, 23, 0.18);
+        overflow: hidden;
+      }
+
+      .aside {
+        padding: 56px 52px;
+        border-right: 1px solid var(--line);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 58%),
+          linear-gradient(135deg, rgba(112, 84, 54, 0.08), transparent 58%);
+      }
+
+      .eyebrow {
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        font-size: 11px;
+        color: var(--accent);
+        margin: 0 0 18px;
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-family: "Palatino Linotype", "Book Antiqua", serif;
+        font-size: clamp(2.3rem, 5vw, 4.4rem);
+        line-height: 0.94;
+        font-weight: 700;
+      }
+
+      .summary {
+        max-width: 30rem;
+        margin: 0 0 28px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .rail {
+        display: grid;
+        gap: 14px;
+        margin-top: 28px;
+      }
+
+      .rail-card {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 247, 0.72);
+        padding: 16px 18px;
+      }
+
+      .rail-card strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.95rem;
+      }
+
+      .rail-card span {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .panel {
+        padding: 36px 34px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: var(--panel);
+        backdrop-filter: blur(14px);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-self: flex-start;
+        padding: 7px 12px;
+        border: 1px solid rgba(95, 36, 11, 0.18);
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--accent-strong);
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 1.55rem;
+      }
+
+      .panel p {
+        margin: 0 0 22px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .error {
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        border: 1px solid rgba(138, 61, 18, 0.16);
+        background: var(--error-bg);
+        color: var(--accent-strong);
+        font-size: 0.92rem;
+      }
+
+      form {
+        display: grid;
+        gap: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 7px;
+        font-size: 0.86rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid rgba(60, 45, 29, 0.14);
+        background: var(--field);
+        padding: 15px 14px;
+        font-size: 1rem;
+        color: var(--ink);
+      }
+
+      input:focus {
+        outline: 2px solid rgba(138, 61, 18, 0.2);
+        border-color: rgba(138, 61, 18, 0.28);
+      }
+
+      button {
+        margin-top: 6px;
+        border: none;
+        background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+        color: #fffaf3;
+        padding: 15px 18px;
+        font-size: 0.98rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      .accounts {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      .accounts strong {
+        color: var(--ink);
+      }
+
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .aside {
+          padding: 36px 28px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .panel {
+          padding: 28px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="aside">
+        <p class="eyebrow">Sankofa Payroll &amp; Compliance Services</p>
+        <h1>Quarterly payroll operations, one trusted desk.</h1>
+        <p class="summary">
+          Internal access for payroll administration, compliance verification, and
+          audit review. This demonstration environment uses seeded company records
+          and role-based session access.
+        </p>
+
+        <div class="rail">
+          <article class="rail-card">
+            <strong>Payroll Administration</strong>
+            <span>Batch oversight, employee records, and controlled payroll review.</span>
+          </article>
+          <article class="rail-card">
+            <strong>Compliance Verification</strong>
+            <span>Quarterly sign-off workflows, exceptions, and policy checks.</span>
+          </article>
+          <article class="rail-card">
+            <strong>Audit Evidence</strong>
+            <span>Read-only activity records, login history, and mock system events.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <span class="badge">{{title}}</span>
+        <h2>Secure internal sign in</h2>
+        <p>Use one of the seeded demo accounts to access the internal platform.</p>
+
+        {{#if error}}
+          <div class="error">{{error}}</div>
+        {{/if}}
+
+        <form method="post" action="/login">
+          <label>
+            Work email
+            <input type="email" name="email" placeholder="name@sankofa.local" required />
+          </label>
+          <label>
+            Access phrase
+            <input type="password" name="password" placeholder="demo-password" required />
+          </label>
+          <button type="submit">Enter Internal Platform</button>
+        </form>
+
+        <div class="accounts">
+          <strong>Demo accounts:</strong><br />
+          `anita@sankofa.local`, `felix@sankofa.local`, `akosua.audit@sankofa.local`<br />
+          Shared password: `demo-password`
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

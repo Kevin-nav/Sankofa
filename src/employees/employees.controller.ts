@@ -31,7 +31,7 @@ export class EmployeesController {
     }
 
     const { employees, departments } = await this.employeesService.listEmployees(department);
-    const chrome = this.layoutService.getDashboardViewModel(sessionUser);
+    const chrome = this.layoutService.getShellViewModel(sessionUser);
 
     return {
       ...chrome,
@@ -54,7 +54,7 @@ export class EmployeesController {
     }
 
     const employee = await this.employeesService.getEmployeeByCode(employeeCode);
-    const chrome = this.layoutService.getDashboardViewModel(sessionUser);
+    const chrome = this.layoutService.getShellViewModel(sessionUser);
 
     return {
       ...chrome,

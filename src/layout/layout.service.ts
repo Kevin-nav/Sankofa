@@ -7,13 +7,7 @@ type NavItem = {
   href: string;
 };
 
-type DashboardCard = {
-  label: string;
-  value: string;
-  detail: string;
-};
-
-type DashboardViewModel = {
+type ShellViewModel = {
   title: string;
   sectionLabel: string;
   systemName: string;
@@ -21,13 +15,11 @@ type DashboardViewModel = {
   user: SessionUser;
   userRoleLabel: string;
   navItems: NavItem[];
-  dashboardCards: DashboardCard[];
-  activityItems: string[];
 };
 
 @Injectable()
 export class LayoutService {
-  getDashboardViewModel(user: SessionUser): DashboardViewModel {
+  getShellViewModel(user: SessionUser): ShellViewModel {
     return {
       title: 'Operations Dashboard',
       sectionLabel: 'Internal Platform',
@@ -37,8 +29,6 @@ export class LayoutService {
       user,
       userRoleLabel: this.getRoleLabel(user.role),
       navItems: this.getNavigation(user.role),
-      dashboardCards: this.getDashboardCards(user.role),
-      activityItems: this.getActivityItems(user.role),
     };
   }
 
@@ -65,92 +55,6 @@ export class LayoutService {
         ];
       default:
         return [{ label: 'Operations Dashboard', href: '/dashboard' }];
-    }
-  }
-
-  private getDashboardCards(role: UserRole): DashboardCard[] {
-    switch (role) {
-      case UserRole.PAYROLL_ADMIN:
-        return [
-          {
-            label: 'Quarterly batches',
-            value: '04',
-            detail: 'Open payroll cycles awaiting verification.',
-          },
-          {
-            label: 'Pending employee updates',
-            value: '11',
-            detail: 'Directory changes pending payroll review.',
-          },
-          {
-            label: 'Export readiness',
-            value: '92%',
-            detail: 'Payroll records aligned for controlled release.',
-          },
-        ];
-      case UserRole.COMPLIANCE_OFFICER:
-        return [
-          {
-            label: 'Reviews assigned',
-            value: '03',
-            detail: 'Quarterly batches queued for compliance sign-off.',
-          },
-          {
-            label: 'Flagged records',
-            value: '07',
-            detail: 'Entries requiring documentation before approval.',
-          },
-          {
-            label: 'Policy checkpoints',
-            value: '18',
-            detail: 'Verification controls tracked on this cycle.',
-          },
-        ];
-      case UserRole.AUDIT_ANALYST:
-        return [
-          {
-            label: 'Login anomalies',
-            value: '05',
-            detail: 'Flagged timestamps across monitored accounts.',
-          },
-          {
-            label: 'System events',
-            value: '14',
-            detail: 'Read-only host evidence loaded for review.',
-          },
-          {
-            label: 'Outbound links',
-            value: '03',
-            detail: 'Network records marked for audit follow-up.',
-          },
-        ];
-      default:
-        return [];
-    }
-  }
-
-  private getActivityItems(role: UserRole): string[] {
-    switch (role) {
-      case UserRole.PAYROLL_ADMIN:
-        return [
-          'Quarterly payroll sheet synchronized for internal review.',
-          'Bank account masking verified across finance department records.',
-          'Compensation adjustments staged for next approval window.',
-        ];
-      case UserRole.COMPLIANCE_OFFICER:
-        return [
-          'Review queue updated with newly flagged deduction mismatches.',
-          'Policy acknowledgement status refreshed for the current cycle.',
-          'Pending sign-off records grouped by quarter and department.',
-        ];
-      case UserRole.AUDIT_ANALYST:
-        return [
-          'Suspicious login history assembled into the investigation timeline.',
-          'Host event feed reconciled against payroll workstation inventory.',
-          'Outbound connection records marked for evidence preservation.',
-        ];
-      default:
-        return [];
     }
   }
 

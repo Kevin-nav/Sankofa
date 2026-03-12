@@ -34,7 +34,7 @@ export class ComplianceController {
     }
 
     const reviews = await this.complianceService.listReviews();
-    const chrome = this.layoutService.getDashboardViewModel(sessionUser);
+    const chrome = this.layoutService.getShellViewModel(sessionUser);
 
     return {
       ...chrome,
@@ -55,7 +55,7 @@ export class ComplianceController {
     }
 
     const review = await this.complianceService.getReview(batchCode);
-    const chrome = this.layoutService.getDashboardViewModel(sessionUser);
+    const chrome = this.layoutService.getShellViewModel(sessionUser);
 
     return {
       ...chrome,

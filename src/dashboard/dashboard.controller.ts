@@ -6,25 +6,21 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
 import { Request } from 'express';
-import { RoleGuard } from '../auth/role.guard';
 import { SessionGuard } from '../auth/session.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { LayoutService } from '../layout/layout.service';
-import { AuditService } from './audit.service';
+import { DashboardService } from './dashboard.service';
 
-@Controller('audit')
-@UseGuards(SessionGuard, RoleGuard)
-@Roles(UserRole.AUDIT_ANALYST)
-export class AuditController {
+@Controller('dashboard')
+@UseGuards(SessionGuard)
+export class DashboardController {
   constructor(
-    private readonly auditService: AuditService,
+    private readonly dashboardService: DashboardService,
     private readonly layoutService: LayoutService,
   ) {}
 
   @Get()
-  @Render('audit/index')
+  @Render('dashboard/index')
   async index(@Req() request: Request) {
     const sessionUser = request.session.user;
 
@@ -32,15 +28,15 @@ export class AuditController {
       throw new UnauthorizedException('No active session.');
     }
 
-    const evidence = await this.auditService.getEvidenceView();
     const chrome = this.layoutService.getShellViewModel(sessionUser);
+    const dashboard = await this.dashboardService.getDashboardData(sessionUser);
 
     return {
       ...chrome,
-      title: 'Audit & Activity',
+      ...dashboard,
+      title: 'Operations Dashboard',
       pageSummary:
-        'Read-only investigation evidence for login anomalies, host events, and outbound network activity.',
-      ...evidence,
+        'Unified internal workspace for payroll processing, compliance review, and audit evidence oversight.',
     };
   }
 }

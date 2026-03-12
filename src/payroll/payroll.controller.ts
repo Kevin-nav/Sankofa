@@ -30,7 +30,7 @@ export class PayrollController {
     }
 
     const batches = await this.payrollService.listBatches();
-    const chrome = this.layoutService.getDashboardViewModel(sessionUser);
+    const chrome = this.layoutService.getShellViewModel(sessionUser);
 
     return {
       ...chrome,
@@ -51,7 +51,7 @@ export class PayrollController {
     }
 
     const batch = await this.payrollService.getBatch(batchCode);
-    const chrome = this.layoutService.getDashboardViewModel(sessionUser);
+    const chrome = this.layoutService.getShellViewModel(sessionUser);
 
     return {
       ...chrome,
@@ -76,7 +76,7 @@ export class PayrollController {
     }
 
     const entry = await this.payrollService.getEntry(batchCode, employeeCode);
-    const chrome = this.layoutService.getDashboardViewModel(sessionUser);
+    const chrome = this.layoutService.getShellViewModel(sessionUser);
 
     return {
       ...chrome,

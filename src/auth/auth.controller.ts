@@ -6,20 +6,13 @@ import {
   Render,
   Req,
   Res,
-  UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { LayoutService } from '../layout/layout.service';
 import { AuthService } from './auth.service';
-import { SessionGuard } from './session.guard';
 
 @Controller()
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly layoutService: LayoutService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Get('login')
   @Render('login')
@@ -77,18 +70,5 @@ export class AuthController {
     });
 
     response.redirect('/login');
-  }
-
-  @Get('dashboard')
-  @UseGuards(SessionGuard)
-  @Render('layouts/main')
-  getDashboard(@Req() request: Request) {
-    const sessionUser = request.session.user;
-
-    if (!sessionUser) {
-      throw new UnauthorizedException('No active session.');
-    }
-
-    return this.layoutService.getDashboardViewModel(sessionUser);
   }
 }

@@ -4,6 +4,7 @@ import express from 'express';
 import session from 'express-session';
 import hbs from 'hbs';
 import path from 'node:path';
+import { ViewExceptionFilter } from './common/filters/view-exception.filter';
 
 export function configureApp(app: INestApplication): void {
   const expressApp = app as NestExpressApplication;
@@ -23,4 +24,5 @@ export function configureApp(app: INestApplication): void {
       },
     }),
   );
+  expressApp.useGlobalFilters(new ViewExceptionFilter());
 }

@@ -9,6 +9,9 @@ type SeedCounts = {
   payrollEntries: number;
   complianceReviews: number;
   complianceFlags: number;
+  loginEvents: number;
+  systemEvents: number;
+  networkEvents: number;
 };
 
 const demoUsers = [
@@ -95,6 +98,9 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
   const prisma = createClient(databaseUrl);
 
   try {
+    await prisma.networkEvent.deleteMany();
+    await prisma.systemEvent.deleteMany();
+    await prisma.loginEvent.deleteMany();
     await prisma.complianceFlag.deleteMany();
     await prisma.complianceReview.deleteMany();
     await prisma.payrollEntry.deleteMany();
@@ -273,6 +279,76 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
       ],
     });
 
+    await prisma.loginEvent.createMany({
+      data: [
+        {
+          userId: felix.id,
+          loginTime: new Date('2026-06-08T08:14:00Z'),
+          sourceIp: '10.20.14.22',
+          deviceLabel: 'FELIX-LT-07',
+          anomalyFlag: false,
+        },
+        {
+          userId: felix.id,
+          loginTime: new Date('2026-06-09T02:41:00Z'),
+          sourceIp: '10.20.14.22',
+          deviceLabel: 'FELIX-LT-07',
+          anomalyFlag: true,
+        },
+        {
+          userId: felix.id,
+          loginTime: new Date('2026-06-11T01:55:00Z'),
+          sourceIp: '10.20.14.22',
+          deviceLabel: 'FELIX-LT-07',
+          anomalyFlag: true,
+        },
+      ],
+    });
+
+    await prisma.systemEvent.createMany({
+      data: [
+        {
+          hostname: 'FELIX-LT-07',
+          eventType: 'ServiceCreated',
+          timestamp: new Date('2026-06-09T02:44:00Z'),
+          severity: 'High',
+          summary: 'Unexpected background service registered.',
+          details: 'Service name "PolicySyncHost" appeared outside maintenance window.',
+        },
+        {
+          hostname: 'FELIX-LT-07',
+          eventType: 'FileAccess',
+          timestamp: new Date('2026-06-09T02:47:00Z'),
+          severity: 'Medium',
+          summary: 'Payroll archive folder accessed after business hours.',
+          details: 'Quarterly payroll directory enumeration recorded on local workstation.',
+        },
+      ],
+    });
+
+    await prisma.networkEvent.createMany({
+      data: [
+        {
+          hostname: 'FELIX-LT-07',
+          destination: '198.51.100.42',
+          port: 443,
+          protocol: 'TLS',
+          timestamp: new Date('2026-06-11T01:58:00Z'),
+          riskLabel: 'Investigate',
+          notes: 'Outbound session occurred during anomalous login window.',
+        },
+        {
+          hostname: 'FELIX-LT-07',
+          destination: '198.51.100.42',
+          port: 443,
+          protocol: 'TLS',
+          timestamp: new Date('2026-06-12T02:11:00Z'),
+          riskLabel: 'Investigate',
+          notes: 'Repeated encrypted outbound connection from payroll workstation.',
+        },
+      ],
+    });
+
     const [
       users,
       employees,
@@ -280,6 +356,9 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
       payrollEntries,
       complianceReviews,
       complianceFlags,
+      loginEvents,
+      systemEvents,
+      networkEvents,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.employee.count(),
@@ -287,6 +366,9 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
       prisma.payrollEntry.count(),
       prisma.complianceReview.count(),
       prisma.complianceFlag.count(),
+      prisma.loginEvent.count(),
+      prisma.systemEvent.count(),
+      prisma.networkEvent.count(),
     ]);
 
     return {
@@ -296,6 +378,9 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
       payrollEntries,
       complianceReviews,
       complianceFlags,
+      loginEvents,
+      systemEvents,
+      networkEvents,
     };
   } finally {
     await prisma.$disconnect();
@@ -305,7 +390,7 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
 async function main(): Promise<void> {
   const counts = await seedDatabase();
   console.log(
-    `Seeded ${counts.users} users, ${counts.employees} employees, ${counts.payrollBatches} payroll batches, ${counts.payrollEntries} payroll entries, ${counts.complianceReviews} compliance reviews, and ${counts.complianceFlags} compliance flags into Sankofa Payroll Platform.`,
+    `Seeded ${counts.users} users, ${counts.employees} employees, ${counts.payrollBatches} payroll batches, ${counts.payrollEntries} payroll entries, ${counts.complianceReviews} compliance reviews, ${counts.complianceFlags} compliance flags, ${counts.loginEvents} login events, ${counts.systemEvents} system events, and ${counts.networkEvents} network events into Sankofa Payroll Platform.`,
   );
 }
 

@@ -54,6 +54,10 @@
                     <td>{{this.payGrade}}</td>
                     <td>{{this.employmentStatus}}</td>
                   </tr>
+                {{else}}
+                  <tr>
+                    <td class="empty-cell" colspan="5">No employee records match the current department filter.</td>
+                  </tr>
                 {{/each}}
               </tbody>
             </table>

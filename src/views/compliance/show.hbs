@@ -61,6 +61,10 @@
                     <td>{{this.resolutionState}}</td>
                     <td>{{this.description}}</td>
                   </tr>
+                {{else}}
+                  <tr>
+                    <td class="empty-cell" colspan="5">No flags are attached to this review.</td>
+                  </tr>
                 {{/each}}
               </tbody>
             </table>

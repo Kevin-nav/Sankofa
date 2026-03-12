@@ -43,6 +43,10 @@
                     <td>{{this.completedChecks}}</td>
                     <td>{{this._count.flags}}</td>
                   </tr>
+                {{else}}
+                  <tr>
+                    <td class="empty-cell" colspan="5">No compliance reviews are currently assigned.</td>
+                  </tr>
                 {{/each}}
               </tbody>
             </table>

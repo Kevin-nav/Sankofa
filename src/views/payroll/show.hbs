@@ -61,6 +61,10 @@
                     <td>{{this.tax}}</td>
                     <td>{{this.netPay}}</td>
                   </tr>
+                {{else}}
+                  <tr>
+                    <td class="empty-cell" colspan="6">This payroll batch does not contain any employee entries.</td>
+                  </tr>
                 {{/each}}
               </tbody>
             </table>

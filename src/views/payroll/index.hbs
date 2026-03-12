@@ -45,6 +45,10 @@
                     <td>{{this.totalNet}}</td>
                     <td>{{this._count.entries}}</td>
                   </tr>
+                {{else}}
+                  <tr>
+                    <td class="empty-cell" colspan="6">No payroll batches are currently available.</td>
+                  </tr>
                 {{/each}}
               </tbody>
             </table>

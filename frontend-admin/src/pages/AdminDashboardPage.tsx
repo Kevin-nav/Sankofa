@@ -21,6 +21,9 @@ export function AdminDashboardPage() {
   const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
   const [recentAuditLogs, setRecentAuditLogs] = useState<AuditEntry[]>([]);
   const [message, setMessage] = useState("");
+  const [userPasswords, setUserPasswords] = useState<Record<number, string>>(
+    {},
+  );
   const [employeeForm, setEmployeeForm] = useState({
     name: "",
     email: "",
@@ -79,16 +82,21 @@ export function AdminDashboardPage() {
   }
 
   async function resetPassword(targetUser: ManagedUser) {
-    const response = await axios.post(
-      `/api/admin/users/${targetUser.id}/reset-password`,
-      {
-        _csrf: csrfToken,
-      },
-    );
-    setMessage(
-      `Reset password for ${targetUser.email}. Temporary password: ${response.data.temporaryPassword}`,
-    );
-    await refreshData();
+    try {
+      const response = await axios.post(
+        `/api/admin/users/${targetUser.id}/reset-password`,
+        {
+          _csrf: csrfToken,
+        },
+      );
+      setUserPasswords((current) => ({
+        ...current,
+        [targetUser.id]: `New temporary password: ${response.data.temporaryPassword}`,
+      }));
+      await refreshData();
+    } catch (error: any) {
+      setMessage(error.response?.data?.message || "Failed to reset password.");
+    }
   }
 
   async function updateStatus(
@@ -108,7 +116,10 @@ export function AdminDashboardPage() {
       const response = await axios.get(
         `/api/admin/users/${targetUser.id}/password`,
       );
-      setMessage(`Password for ${targetUser.email}: ${response.data.password}`);
+      setUserPasswords((current) => ({
+        ...current,
+        [targetUser.id]: `Current password: ${response.data.password}`,
+      }));
     } catch (error: any) {
       setMessage(
         error.response?.data?.message || "Failed to retrieve password.",
@@ -281,6 +292,17 @@ export function AdminDashboardPage() {
                     ? ` | ${managedUser.adminScopes.join(", ")}`
                     : ""}
                 </p>
+                {userPasswords[managedUser.id] && (
+                  <p
+                    style={{
+                      marginTop: "0.5rem",
+                      fontWeight: "bold",
+                      color: "var(--color-primary, #0056b3)",
+                    }}
+                  >
+                    {userPasswords[managedUser.id]}
+                  </p>
+                )}
               </div>
               <div className="user-actions">
                 {adminUser.isSuperAdmin && !managedUser.isAdmin && (

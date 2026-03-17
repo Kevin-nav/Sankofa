@@ -3,11 +3,11 @@ import {
   ConflictException,
   Injectable,
   OnModuleInit,
-} from '@nestjs/common';
-import { compare, hash } from 'bcryptjs';
-import { AdminScope, Prisma, User, UserRole } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { SessionUser } from './session.types';
+} from "@nestjs/common";
+import * as crypto from "crypto";
+import { AdminScope, Prisma, User, UserRole } from "@prisma/client";
+import { PrismaService } from "../prisma/prisma.service";
+import { SessionUser } from "./session.types";
 
 type SignupInput = {
   name: string;
@@ -48,12 +48,12 @@ export class AuthService implements OnModuleInit {
       where: { email: this.normalizeEmail(email) },
     });
 
-    if (!user || user.status !== 'Active') {
+    if (!user || user.status !== "Active") {
       return null;
     }
 
-    const isPasswordValid = await compare(password, user.passwordHash);
-    if (!isPasswordValid) {
+    const decryptedPassword = this.decryptPassword(user.passwordHash);
+    if (decryptedPassword !== password) {
       return null;
     }
 
@@ -65,7 +65,10 @@ export class AuthService implements OnModuleInit {
     });
   }
 
-  async getAdminSessionUser(email: string, password: string): Promise<SessionUser | null> {
+  async getAdminSessionUser(
+    email: string,
+    password: string,
+  ): Promise<SessionUser | null> {
     const user = await this.authenticate(email, password);
 
     if (!user || !user.isAdmin) {
@@ -77,33 +80,12 @@ export class AuthService implements OnModuleInit {
   }
 
   async signup(input: SignupInput): Promise<User> {
-    const name = this.normalizeName(input.name);
-    const email = this.normalizeEmail(input.email);
-    const password = input.password;
-    const role = this.parseRole(input.role);
-
-    this.assertValidPassword(password);
-    await this.assertEmailAvailable(email);
-
-    return this.prisma.$transaction(async (transaction) => {
-      const now = new Date();
-      return transaction.user.create({
-        data: {
-          name,
-          email,
-          employeeCode: await this.generateEmployeeCode(transaction),
-          passwordHash: await hash(password, 10),
-          role,
-          department: this.getDepartmentForRole(role),
-          status: 'Active',
-          lastLogin: now,
-          lastPasswordChangeAt: now,
-        },
-      });
-    });
+    throw new BadRequestException("Public signups are currently disabled.");
   }
 
-  async createManagedUser(input: SignupInput & { mustChangePassword?: boolean }): Promise<User> {
+  async createManagedUser(
+    input: SignupInput & { mustChangePassword?: boolean },
+  ): Promise<User> {
     const name = this.normalizeName(input.name);
     const email = this.normalizeEmail(input.email);
     const password = input.password;
@@ -119,10 +101,10 @@ export class AuthService implements OnModuleInit {
           name,
           email,
           employeeCode: await this.generateEmployeeCode(transaction),
-          passwordHash: await hash(password, 10),
+          passwordHash: this.encryptPassword(password),
           role,
           department: this.getDepartmentForRole(role),
-          status: 'Active',
+          status: "Active",
           mustChangePassword: input.mustChangePassword ?? false,
           lastPasswordChangeAt: now,
         },
@@ -140,10 +122,10 @@ export class AuthService implements OnModuleInit {
       data: {
         name,
         email,
-        passwordHash: await hash(input.password, 12),
+        passwordHash: this.encryptPassword(input.password),
         role: input.role,
-        department: 'Administration',
-        status: 'Active',
+        department: "Administration",
+        status: "Active",
         isAdmin: true,
         isSuperAdmin: input.isSuperAdmin ?? false,
         mustChangePassword: true,
@@ -157,7 +139,7 @@ export class AuthService implements OnModuleInit {
 
   async listUsers() {
     return this.prisma.user.findMany({
-      orderBy: [{ isAdmin: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ isAdmin: "desc" }, { createdAt: "desc" }],
       include: {
         adminScopes: {
           select: {
@@ -186,13 +168,15 @@ export class AuthService implements OnModuleInit {
         name,
         email,
         isAdmin: false,
-        status: 'Active',
+        status: "Active",
       },
       select: { id: true },
     });
 
     if (!user) {
-      throw new BadRequestException('We could not verify an active employee with those details.');
+      throw new BadRequestException(
+        "We could not verify an active employee with those details.",
+      );
     }
 
     return this.updatePassword(user.id, input.password, {
@@ -200,14 +184,18 @@ export class AuthService implements OnModuleInit {
     });
   }
 
-  async updateUserStatus(userId: number, status: 'Active' | 'Suspended') {
+  async updateUserStatus(userId: number, status: "Active" | "Suspended") {
     return this.prisma.user.update({
       where: { id: userId },
       data: { status },
     });
   }
 
-  async updateAdminScopes(userId: number, scopes: AdminScope[], isSuperAdmin = false) {
+  async updateAdminScopes(
+    userId: number,
+    scopes: AdminScope[],
+    isSuperAdmin = false,
+  ) {
     const normalizedScopes = this.parseScopes(scopes);
 
     return this.prisma.user.update({
@@ -267,7 +255,10 @@ export class AuthService implements OnModuleInit {
       },
     });
 
-    return this.toSessionUser(user, user.adminScopes.map((entry) => entry.scope));
+    return this.toSessionUser(
+      user,
+      user.adminScopes.map((entry) => entry.scope),
+    );
   }
 
   private toSessionUser(
@@ -289,8 +280,9 @@ export class AuthService implements OnModuleInit {
 
   private async ensureBootstrapSuperAdmin(): Promise<void> {
     const email = process.env.BOOTSTRAP_SUPER_ADMIN_EMAIL?.trim().toLowerCase();
-    const password = process.env.BOOTSTRAP_SUPER_ADMIN_PASSWORD ?? '';
-    const name = process.env.BOOTSTRAP_SUPER_ADMIN_NAME?.trim() || 'Sankofa Super Admin';
+    const password = process.env.BOOTSTRAP_SUPER_ADMIN_PASSWORD ?? "";
+    const name =
+      process.env.BOOTSTRAP_SUPER_ADMIN_NAME?.trim() || "Sankofa Super Admin";
 
     if (!email || !password) {
       return;
@@ -306,14 +298,18 @@ export class AuthService implements OnModuleInit {
     const allScopes = Object.values(AdminScope);
 
     if (existing) {
-      if (!existing.isAdmin || !existing.isSuperAdmin || existing.adminScopes.length !== allScopes.length) {
+      if (
+        !existing.isAdmin ||
+        !existing.isSuperAdmin ||
+        existing.adminScopes.length !== allScopes.length
+      ) {
         await this.updateAdminScopes(existing.id, allScopes, true);
         await this.prisma.user.update({
           where: { id: existing.id },
           data: {
             isAdmin: true,
             isSuperAdmin: true,
-            status: 'Active',
+            status: "Active",
           },
         });
       }
@@ -337,7 +333,7 @@ export class AuthService implements OnModuleInit {
         isAdmin: false,
         employeeCode: null,
       },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       select: { id: true },
     });
 
@@ -345,7 +341,9 @@ export class AuthService implements OnModuleInit {
       return;
     }
 
-    let nextEmployeeCodeNumber = await this.getNextEmployeeCodeNumber(this.prisma);
+    let nextEmployeeCodeNumber = await this.getNextEmployeeCodeNumber(
+      this.prisma,
+    );
 
     await this.prisma.$transaction(
       usersMissingCodes.map((user) =>
@@ -369,7 +367,7 @@ export class AuthService implements OnModuleInit {
     return this.prisma.user.update({
       where: { id: userId },
       data: {
-        passwordHash: await hash(password, 12),
+        passwordHash: this.encryptPassword(password),
         mustChangePassword: options.mustChangePassword,
         passwordResetAt: new Date(),
         lastPasswordChangeAt: new Date(),
@@ -380,15 +378,15 @@ export class AuthService implements OnModuleInit {
   private normalizeName(name: string): string {
     const normalizedName = name.trim();
     if (!normalizedName) {
-      throw new BadRequestException('Full name is required.');
+      throw new BadRequestException("Full name is required.");
     }
     return normalizedName;
   }
 
   private normalizeEmail(email: string): string {
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail || !normalizedEmail.includes('@')) {
-      throw new BadRequestException('A valid email address is required.');
+    if (!normalizedEmail || !normalizedEmail.includes("@")) {
+      throw new BadRequestException("A valid email address is required.");
     }
     return normalizedEmail;
   }
@@ -396,14 +394,16 @@ export class AuthService implements OnModuleInit {
   private normalizeEmployeeCode(employeeCode: string): string {
     const normalizedEmployeeCode = employeeCode.trim().toUpperCase();
     if (!normalizedEmployeeCode) {
-      throw new BadRequestException('Employee ID is required.');
+      throw new BadRequestException("Employee ID is required.");
     }
     return normalizedEmployeeCode;
   }
 
   private assertValidPassword(password: string): void {
     if (password.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters long.');
+      throw new BadRequestException(
+        "Password must be at least 8 characters long.",
+      );
     }
   }
 
@@ -414,7 +414,7 @@ export class AuthService implements OnModuleInit {
     });
 
     if (existingUser) {
-      throw new ConflictException('An account with that email already exists.');
+      throw new ConflictException("An account with that email already exists.");
     }
   }
 
@@ -423,14 +423,14 @@ export class AuthService implements OnModuleInit {
       return role as UserRole;
     }
 
-    throw new BadRequestException('A valid role selection is required.');
+    throw new BadRequestException("A valid role selection is required.");
   }
 
   private parseScopes(scopes: Iterable<AdminScope | string>): AdminScope[] {
     const normalizedScopes = Array.from(new Set(Array.from(scopes)));
 
     if (normalizedScopes.length === 0) {
-      throw new BadRequestException('At least one admin scope is required.');
+      throw new BadRequestException("At least one admin scope is required.");
     }
 
     return normalizedScopes.map((scope) => {
@@ -445,17 +445,19 @@ export class AuthService implements OnModuleInit {
   private getDepartmentForRole(role: UserRole): string {
     switch (role) {
       case UserRole.PAYROLL_ADMIN:
-        return 'Payroll';
+        return "Payroll";
       case UserRole.COMPLIANCE_OFFICER:
-        return 'Compliance';
+        return "Compliance";
       case UserRole.AUDIT_ANALYST:
-        return 'Audit';
+        return "Audit";
       default:
-        return 'Operations';
+        return "Operations";
     }
   }
 
-  private async generateEmployeeCode(prisma: Prisma.TransactionClient): Promise<string> {
+  private async generateEmployeeCode(
+    prisma: Prisma.TransactionClient,
+  ): Promise<string> {
     const nextEmployeeCodeNumber = await this.getNextEmployeeCodeNumber(prisma);
     return this.formatEmployeeCode(nextEmployeeCodeNumber);
   }
@@ -475,8 +477,12 @@ export class AuthService implements OnModuleInit {
 
     const highestEmployeeCodeNumber = Math.max(
       1000,
-      ...userEmployeeCodes.map((entry) => this.extractEmployeeCodeNumber(entry.employeeCode)),
-      ...employeeDirectoryCodes.map((entry) => this.extractEmployeeCodeNumber(entry.employeeCode)),
+      ...userEmployeeCodes.map((entry) =>
+        this.extractEmployeeCodeNumber(entry.employeeCode),
+      ),
+      ...employeeDirectoryCodes.map((entry) =>
+        this.extractEmployeeCodeNumber(entry.employeeCode),
+      ),
     );
 
     return highestEmployeeCodeNumber + 1;
@@ -492,6 +498,50 @@ export class AuthService implements OnModuleInit {
   }
 
   private formatEmployeeCode(value: number): string {
-    return `SK-${String(value).padStart(4, '0')}`;
+    return `SK-${String(value).padStart(4, "0")}`;
+  }
+
+  private get encryptionKey(): Buffer {
+    const key =
+      process.env.PASSWORD_ENCRYPTION_KEY ||
+      "default-32-character-secret-key-!";
+    return Buffer.from(key.padEnd(32, "0").slice(0, 32));
+  }
+
+  private encryptPassword(password: string): string {
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv("aes-256-gcm", this.encryptionKey, iv);
+
+    let encrypted = cipher.update(password, "utf8", "hex");
+    encrypted += cipher.final("hex");
+
+    const authTag = cipher.getAuthTag().toString("hex");
+
+    return `${iv.toString("hex")}:${authTag}:${encrypted}`;
+  }
+
+  private decryptPassword(encryptedPassword: string): string {
+    try {
+      const parts = encryptedPassword.split(":");
+      if (parts.length !== 3) return "";
+
+      const [ivHex, authTagHex, encryptedHex] = parts;
+      const iv = Buffer.from(ivHex, "hex");
+      const authTag = Buffer.from(authTagHex, "hex");
+
+      const decipher = crypto.createDecipheriv(
+        "aes-256-gcm",
+        this.encryptionKey,
+        iv,
+      );
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+      decrypted += decipher.final("utf8");
+
+      return decrypted;
+    } catch (error) {
+      return "";
+    }
   }
 }

@@ -5,7 +5,6 @@ import { promisify } from 'node:util';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/app.setup';
 import { seedDatabase } from '../../prisma/seed';
 
@@ -34,6 +33,7 @@ describe('Auth flow (e2e)', () => {
     );
     await seedDatabase(databaseUrl);
 
+    const { AppModule } = await import('../../src/app.module');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

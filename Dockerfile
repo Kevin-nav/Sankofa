@@ -27,6 +27,8 @@ RUN npm config set fetch-retries 5 \
  && npm ci --omit=dev --no-audit --no-fund
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY docker/start-api.sh ./docker/start-api.sh
 RUN mkdir -p /data
+RUN chmod +x ./docker/start-api.sh
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma generate && npx prisma db push && node dist/main.js"]
+CMD ["./docker/start-api.sh"]

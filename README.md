@@ -119,6 +119,8 @@ docker compose --env-file deploy/.env.production -f deploy/docker-compose.vps.ym
 docker compose --env-file deploy/.env.production -f deploy/docker-compose.vps.yml up -d
 ```
 
+For the first deployment, leave `SEED_ON_BOOT=true` so the container seeds the initial demo data and bootstrap admin. After the first successful start, change it to `SEED_ON_BOOT=false` and redeploy so future restarts do not attempt reseeding.
+
 4. Configure Cloudflare Tunnel to route:
 
 - `app.sankofa-company.org` -> employee frontend

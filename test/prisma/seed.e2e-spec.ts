@@ -44,13 +44,20 @@ describe('Prisma seed (e2e)', () => {
     });
 
     try {
-      const [users, employees] = await Promise.all([
+      const [users, employees, admins] = await Promise.all([
         prisma.user.count(),
         prisma.employee.count(),
+        prisma.user.count({
+          where: {
+            isAdmin: true,
+            isSuperAdmin: true,
+          },
+        }),
       ]);
 
-      expect(users).toBe(3);
+      expect(users).toBe(4);
       expect(employees).toBe(3);
+      expect(admins).toBe(1);
     } finally {
       await prisma.$disconnect();
     }

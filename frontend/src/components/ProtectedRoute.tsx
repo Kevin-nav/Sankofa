@@ -6,7 +6,14 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="app-shell app-shell-centered">
+        <div className="status-card">
+          <div className="status-spinner" />
+          <p>Restoring your secure session.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {

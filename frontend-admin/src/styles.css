@@ -1,0 +1,209 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+:root {
+  color: #2f231c;
+  background:
+    radial-gradient(circle at top left, rgba(115, 77, 49, 0.15), transparent 28%),
+    linear-gradient(180deg, #f8f1e8, #ead8c6);
+  font-family: 'Manrope', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1,
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.admin-login-shell,
+.admin-dashboard-shell {
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.admin-login-shell {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+}
+
+.admin-login-hero,
+.admin-login-panel,
+.panel,
+.banner {
+  background: rgba(255, 250, 244, 0.9);
+  border: 1px solid rgba(101, 69, 45, 0.16);
+  border-radius: 1.75rem;
+  box-shadow: 0 20px 48px rgba(75, 49, 28, 0.12);
+}
+
+.admin-login-hero,
+.admin-login-panel,
+.panel {
+  padding: 2rem;
+}
+
+.admin-login-hero h1,
+.admin-header h1 {
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  line-height: 0.94;
+  margin: 0.75rem 0;
+}
+
+.admin-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form button,
+.secondary-button,
+.user-actions button {
+  min-height: 3rem;
+  border-radius: 1rem;
+}
+
+.admin-form input,
+.admin-form select {
+  border: 1px solid rgba(109, 79, 56, 0.2);
+  padding: 0.8rem 0.95rem;
+  background: #fffaf5;
+}
+
+.admin-form button,
+.secondary-button,
+.user-actions button {
+  border: none;
+  background: #5c3d28;
+  color: #f8f1e8;
+  padding: 0 1rem;
+  cursor: pointer;
+}
+
+.secondary-button {
+  background: #8f6b50;
+}
+
+.eyebrow {
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #704932;
+}
+
+.admin-login-note,
+.admin-header p,
+.user-card p,
+.audit-list small,
+.audit-list span {
+  color: #5d4739;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin: 1.25rem 0;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.banner {
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.25rem;
+  color: #5b2b1c;
+  background: rgba(176, 103, 75, 0.15);
+}
+
+.user-list,
+.audit-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.user-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1.1rem;
+  background: rgba(247, 239, 229, 0.95);
+}
+
+.user-actions {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 10rem;
+}
+
+.audit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.audit-list li {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: rgba(247, 239, 229, 0.95);
+}
+
+.checkbox-row {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.checkbox-row input {
+  min-height: auto;
+}
+
+.admin-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 960px) {
+  .admin-login-shell,
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header,
+  .user-card {
+    flex-direction: column;
+  }
+
+  .user-actions {
+    min-width: 0;
+  }
+}

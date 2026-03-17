@@ -70,6 +70,62 @@ The container runs Linux images, which can be hosted by Docker on Linux or Windo
 
 Important production note: update `SESSION_SECRET` in `docker-compose.yml` (or inject it via your deployment platform) before deployment.
 
+## Admin Portal
+
+The secure admin portal is now intended to run on a separate hostname:
+
+- `app.sankofa-company.org` for employees
+- `admin.sankofa-company.org` for IT/admin operations
+
+Key controls:
+
+- admin passwords are hashed and never viewable
+- admins can issue temporary passwords and force password rotation
+- admin accounts use scoped permissions
+- admin actions are written to audit logs
+
+Seeded bootstrap admin for local verification:
+
+- `it.admin@sankofa.local` / `demo-password`
+
+## GitHub Actions And GHCR
+
+The repository now includes a workflow at `.github/workflows/build-and-publish.yml` that:
+
+- runs targeted backend tests
+- builds the employee frontend
+- builds the admin frontend
+- publishes three images to GHCR:
+  - `ghcr.io/<owner>/sankofa-api`
+  - `ghcr.io/<owner>/sankofa-employee-web`
+  - `ghcr.io/<owner>/sankofa-admin-web`
+
+## VPS Deployment
+
+Deployment assets live under `deploy/`:
+
+- `deploy/docker-compose.vps.yml`
+- `deploy/.env.production.example`
+- `deploy/cloudflared/config.example.yml`
+
+Typical VPS flow:
+
+1. Copy `deploy/.env.production.example` to `deploy/.env.production` and fill in real secrets.
+2. Log in to GHCR on the VPS.
+3. Pull and start the stack:
+
+```bash
+docker compose --env-file deploy/.env.production -f deploy/docker-compose.vps.yml pull
+docker compose --env-file deploy/.env.production -f deploy/docker-compose.vps.yml up -d
+```
+
+4. Configure Cloudflare Tunnel to route:
+
+- `app.sankofa-company.org` -> employee frontend
+- `admin.sankofa-company.org` -> admin frontend
+
+Recommended production note: keep the application origin private behind Cloudflare Tunnel and do not expose public inbound ports for the app containers.
+
 ## Demo Accounts
 
 - `anita@sankofa.local` / `demo-password`

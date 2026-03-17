@@ -12,6 +12,9 @@ services:
       SESSION_COOKIE_SECURE: "false"
       TRUST_PROXY: "true"
       ENABLE_CSRF: "true"
+      BOOTSTRAP_SUPER_ADMIN_NAME: Sankofa Super Admin
+      BOOTSTRAP_SUPER_ADMIN_EMAIL: admin@sankofa-company.org
+      BOOTSTRAP_SUPER_ADMIN_PASSWORD: change-this-before-production
     volumes:
       - sakofa_data:/data
 
@@ -21,6 +24,15 @@ services:
       dockerfile: Dockerfile.frontend
     ports:
       - "3000:80"
+    depends_on:
+      - api
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    ports:
+      - "3001:80"
     depends_on:
       - api
 

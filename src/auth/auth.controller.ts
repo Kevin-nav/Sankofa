@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  HttpCode,
   Get,
   Post,
   Req,
@@ -43,14 +44,30 @@ export class AuthController {
       throw new UnauthorizedException('Invalid credentials. Verify your assigned demo account.');
     }
 
-    request.session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
+    request.session.user = await this.authService.buildSessionUser(user.id);
 
-    return { success: true, user: request.session.user };
+    return { success: true, user: request.session.user, csrfToken: request.session.csrfToken ?? '' };
+  }
+
+  @Post('signup')
+  @HttpCode(201)
+  async postSignup(
+    @Body('name') name: string,
+    @Body('email') email: string,
+    @Body('password') password: string,
+    @Body('role') role: string,
+    @Req() request: Request,
+  ) {
+    const user = await this.authService.signup({
+      name,
+      email,
+      password,
+      role,
+    });
+
+    request.session.user = await this.authService.buildSessionUser(user.id);
+
+    return { success: true, user: request.session.user, csrfToken: request.session.csrfToken ?? '' };
   }
 
   @Post('logout')

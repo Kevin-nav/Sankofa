@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AdminModule } from './admin/admin.module';
 import { AuditModule } from './audit/audit.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { AppConfigModule } from './config/app-config.module';
@@ -20,6 +21,7 @@ import { SystemModule } from './system/system.module';
     HealthModule,
     LayoutModule,
     AuthModule,
+    AdminModule,
     AuditModule,
     DashboardModule,
     EmployeesModule,

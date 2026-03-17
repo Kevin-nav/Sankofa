@@ -1,0 +1,9 @@
+tunnel: sankofa-company
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: app.sankofa-company.org
+    service: http://employee-web:80
+  - hostname: admin.sankofa-company.org
+    service: http://admin-web:80
+  - service: http_status:404

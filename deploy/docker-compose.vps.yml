@@ -1,0 +1,41 @@
+services:
+  api:
+    image: ghcr.io/${GHCR_OWNER}/sankofa-api:${SAKOFA_IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: file:/data/app.db
+      SESSION_DB_PATH: /data/sessions.db
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_COOKIE_SECURE: "true"
+      TRUST_PROXY: "true"
+      ENABLE_CSRF: "true"
+      BOOTSTRAP_SUPER_ADMIN_NAME: ${BOOTSTRAP_SUPER_ADMIN_NAME}
+      BOOTSTRAP_SUPER_ADMIN_EMAIL: ${BOOTSTRAP_SUPER_ADMIN_EMAIL}
+      BOOTSTRAP_SUPER_ADMIN_PASSWORD: ${BOOTSTRAP_SUPER_ADMIN_PASSWORD}
+    volumes:
+      - sakofa_data:/data
+
+  employee-web:
+    image: ghcr.io/${GHCR_OWNER}/sankofa-employee-web:${SAKOFA_IMAGE_TAG}
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  admin-web:
+    image: ghcr.io/${GHCR_OWNER}/sankofa-admin-web:${SAKOFA_IMAGE_TAG}
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - employee-web
+      - admin-web
+
+volumes:
+  sakofa_data:

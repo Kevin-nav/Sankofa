@@ -1,0 +1,124 @@
+name: Build And Publish Images
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Run targeted auth tests
+        run: npm test -- --runInBand test/auth/login.e2e-spec.ts
+
+      - name: Install employee frontend dependencies
+        run: npm --prefix frontend ci
+
+      - name: Build employee frontend
+        run: npm --prefix frontend run build
+
+      - name: Install admin frontend dependencies
+        run: npm --prefix frontend-admin ci
+
+      - name: Build admin frontend
+        run: npm --prefix frontend-admin run build
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Normalize image owner
+        id: owner
+        shell: bash
+        run: echo "value=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract API metadata
+        id: meta_api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.owner.outputs.value }}/sankofa-api
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Extract employee web metadata
+        id: meta_employee
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.owner.outputs.value }}/sankofa-employee-web
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Extract admin web metadata
+        id: meta_admin
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.owner.outputs.value }}/sankofa-admin-web
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta_api.outputs.tags }}
+          labels: ${{ steps.meta_api.outputs.labels }}
+
+      - name: Build and push employee web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: ${{ steps.meta_employee.outputs.tags }}
+          labels: ${{ steps.meta_employee.outputs.labels }}
+
+      - name: Build and push admin web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.admin
+          push: true
+          tags: ${{ steps.meta_admin.outputs.tags }}
+          labels: ${{ steps.meta_admin.outputs.labels }}

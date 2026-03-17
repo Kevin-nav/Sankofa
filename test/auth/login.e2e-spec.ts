@@ -12,6 +12,8 @@ import { seedDatabase } from '../../prisma/seed';
 const execFileAsync = promisify(execFile);
 
 describe('Auth flow (e2e)', () => {
+  jest.setTimeout(20000);
+
   const dbPath = path.join(process.cwd(), 'prisma', 'test-auth.db');
   const databaseUrl = `file:${dbPath.replace(/\\/g, '/')}`;
   let app: INestApplication;
@@ -37,12 +39,15 @@ describe('Auth flow (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
     configureApp(app);
     await app.init();
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
     await fs.rm(dbPath, { force: true });
   });
 
@@ -50,43 +55,98 @@ describe('Auth flow (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent
-      .post('/login')
-      .type('form')
+      .post('/api/auth/login')
       .send({
         email: 'anita@sankofa.local',
         password: 'demo-password',
       })
-      .expect(302)
-      .expect('Location', '/dashboard');
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.success).toBe(true);
+        expect(response.body.user).toMatchObject({
+          name: 'Anita Mensah',
+          email: 'anita@sankofa.local',
+          role: 'PAYROLL_ADMIN',
+        });
+      });
 
     await agent
-      .get('/dashboard')
+      .get('/api/dashboard')
       .expect(200)
       .expect((response) => {
-        expect(response.text).toContain('Anita Mensah');
-        expect(response.text).toContain('Payroll Admin');
-        expect(response.text).toContain('Operations Dashboard');
+        expect(response.body.title).toBe('Operations Dashboard');
+        expect(response.body.dashboardCards).toHaveLength(3);
+        expect(response.body.pageSummary).toContain('Unified internal workspace');
       });
   });
 
   it('rejects invalid credentials', async () => {
     await request(app.getHttpServer())
-      .post('/login')
-      .type('form')
+      .post('/api/auth/login')
       .send({
         email: 'anita@sankofa.local',
         password: 'wrong-password',
       })
       .expect(401)
       .expect((response) => {
-        expect(response.text).toContain('Invalid credentials.');
+        expect(response.body.message).toContain('Invalid credentials.');
       });
   });
 
   it('redirects unauthenticated users away from protected routes', async () => {
     await request(app.getHttpServer())
-      .get('/dashboard')
+      .get('/api/dashboard')
       .expect(302)
       .expect('Location', '/login');
+  });
+
+  it('creates an account through signup and returns an authenticated session user', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent
+      .post('/api/auth/signup')
+      .send({
+        name: 'Kojo Annan',
+        email: 'kojo.annan@sankofa.local',
+        password: 'secure-pass-1',
+        role: 'AUDIT_ANALYST',
+      })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.success).toBe(true);
+        expect(response.body.user).toMatchObject({
+          name: 'Kojo Annan',
+          email: 'kojo.annan@sankofa.local',
+          role: 'AUDIT_ANALYST',
+        });
+        expect(typeof response.body.csrfToken).toBe('string');
+        expect(response.body.csrfToken.length).toBeGreaterThan(0);
+      });
+
+    await agent
+      .get('/api/auth/me')
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.user).toMatchObject({
+          name: 'Kojo Annan',
+          email: 'kojo.annan@sankofa.local',
+          role: 'AUDIT_ANALYST',
+        });
+      });
+  });
+
+  it('rejects signup when the email already exists', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/signup')
+      .send({
+        name: 'Another Anita',
+        email: 'anita@sankofa.local',
+        password: 'secure-pass-1',
+        role: 'PAYROLL_ADMIN',
+      })
+      .expect(409)
+      .expect((response) => {
+        expect(response.body.message).toBe('An account with that email already exists.');
+      });
   });
 });

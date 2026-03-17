@@ -5,4 +5,8 @@ export type SessionUser = {
   name: string;
   email: string;
   role: UserRole;
+  isAdmin?: boolean;
+  isSuperAdmin?: boolean;
+  adminScopes?: string[];
+  mustChangePassword?: boolean;
 };

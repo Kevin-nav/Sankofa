@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 
-interface User {
-  id: string;
+export interface User {
+  id: number;
   name: string;
   email: string;
   role: string;
@@ -13,7 +13,8 @@ interface AuthContextType {
   csrfToken: string;
   loading: boolean;
   login: (user: User, token: string) => void;
-  logout: () => void;
+  setCsrfToken: (token: string) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,14 +52,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await axios.post('/api/auth/logout', { _csrf: csrfToken });
       setUser(null);
+      setCsrfToken('');
     } catch (error) {
       console.error('Failed to logout', error);
-      setUser(null); // Force logout locally even if backend fails
+      setUser(null);
+      setCsrfToken('');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, csrfToken, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, csrfToken, loading, login, setCsrfToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

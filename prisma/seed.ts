@@ -43,6 +43,18 @@ const demoUsers = [
     status: 'Active',
     lastLogin: new Date('2026-03-11T07:55:00Z'),
   },
+  {
+    name: 'Yaw Asante',
+    email: 'it.admin@sankofa.local',
+    passwordHash: 'demo-password',
+    role: UserRole.PAYROLL_ADMIN,
+    department: 'Information Security',
+    status: 'Active',
+    isAdmin: true,
+    isSuperAdmin: true,
+    lastLogin: new Date('2026-03-11T06:45:00Z'),
+    lastPasswordChangeAt: new Date('2026-03-11T06:45:00Z'),
+  },
 ];
 
 const demoPasswordHash = hashSync('demo-password', 12);
@@ -104,6 +116,8 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
     await prisma.networkEvent.deleteMany();
     await prisma.systemEvent.deleteMany();
     await prisma.loginEvent.deleteMany();
+    await prisma.adminAuditLog.deleteMany();
+    await prisma.adminScopeGrant.deleteMany();
     await prisma.complianceFlag.deleteMany();
     await prisma.complianceReview.deleteMany();
     await prisma.payrollEntry.deleteMany();
@@ -115,7 +129,21 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
       data: demoUsers.map((user) => ({
         ...user,
         passwordHash: demoPasswordHash,
+        lastPasswordChangeAt: user.lastLogin,
       })),
+    });
+
+    const superAdmin = await prisma.user.findUniqueOrThrow({
+      where: { email: 'it.admin@sankofa.local' },
+    });
+
+    await prisma.adminScopeGrant.createMany({
+      data: [
+        { userId: superAdmin.id, scope: 'USER_ADMIN' },
+        { userId: superAdmin.id, scope: 'SECURITY_ADMIN' },
+        { userId: superAdmin.id, scope: 'AUDIT_ADMIN' },
+        { userId: superAdmin.id, scope: 'ADMIN_ADMIN' },
+      ],
     });
 
     await prisma.employee.createMany({

@@ -46,6 +46,15 @@ export function configureApp(app: INestApplication): void {
     }),
   );
   expressApp.use(
+    '/api/admin/auth/login',
+    rateLimit({
+      windowMs: loginRateWindowMs,
+      max: loginRateMax,
+      standardHeaders: true,
+      legacyHeaders: false,
+    }),
+  );
+  expressApp.use(
     session({
       secret: process.env.SESSION_SECRET ?? 'test-session-secret-not-for-production',
       resave: false,

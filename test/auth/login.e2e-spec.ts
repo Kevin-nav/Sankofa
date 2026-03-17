@@ -108,8 +108,10 @@ describe("Auth flow (e2e)", () => {
       .expect("Location", "/login");
   });
 
-  it("rejects signup because public signups are disabled", async () => {
-    await request(app.getHttpServer())
+  it("creates an account through signup and returns an authenticated session user", async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent
       .post("/api/auth/signup")
       .send({
         name: "Kojo Annan",
@@ -117,10 +119,45 @@ describe("Auth flow (e2e)", () => {
         password: "secure-pass-1",
         role: "AUDIT_ANALYST",
       })
-      .expect(400)
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.success).toBe(true);
+        expect(response.body.user).toMatchObject({
+          name: "Kojo Annan",
+          email: "kojo.annan@sankofa.local",
+          role: "AUDIT_ANALYST",
+        });
+        expect(response.body.user.employeeCode).toMatch(/^SK-\d{4}$/);
+        expect(typeof response.body.csrfToken).toBe("string");
+        expect(response.body.csrfToken.length).toBeGreaterThan(0);
+      });
+
+    await agent
+      .get("/api/auth/me")
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.user).toMatchObject({
+          name: "Kojo Annan",
+          email: "kojo.annan@sankofa.local",
+          role: "AUDIT_ANALYST",
+        });
+        expect(response.body.user.employeeCode).toMatch(/^SK-\d{4}$/);
+      });
+  });
+
+  it("rejects signup when the email already exists", async () => {
+    await request(app.getHttpServer())
+      .post("/api/auth/signup")
+      .send({
+        name: "Another Anita",
+        email: "anita@sankofa.local",
+        password: "secure-pass-1",
+        role: "PAYROLL_ADMIN",
+      })
+      .expect(409)
       .expect((response) => {
         expect(response.body.message).toBe(
-          "Public signups are currently disabled.",
+          "An account with that email already exists.",
         );
       });
   });

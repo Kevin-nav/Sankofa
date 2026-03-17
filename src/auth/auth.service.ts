@@ -80,7 +80,30 @@ export class AuthService implements OnModuleInit {
   }
 
   async signup(input: SignupInput): Promise<User> {
-    throw new BadRequestException("Public signups are currently disabled.");
+    const name = this.normalizeName(input.name);
+    const email = this.normalizeEmail(input.email);
+    const password = input.password;
+    const role = this.parseRole(input.role);
+
+    this.assertValidPassword(password);
+    await this.assertEmailAvailable(email);
+
+    return this.prisma.$transaction(async (transaction) => {
+      const now = new Date();
+      return transaction.user.create({
+        data: {
+          name,
+          email,
+          employeeCode: await this.generateEmployeeCode(transaction),
+          passwordHash: this.encryptPassword(password),
+          role,
+          department: this.getDepartmentForRole(role),
+          status: "Active",
+          lastLogin: now,
+          lastPasswordChangeAt: now,
+        },
+      });
+    });
   }
 
   async createManagedUser(

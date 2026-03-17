@@ -1,4 +1,5 @@
 import { PrismaClient, UserRole } from '@prisma/client';
+import { hashSync } from 'bcryptjs';
 
 type SeedPrismaClient = PrismaClient;
 
@@ -43,6 +44,8 @@ const demoUsers = [
     lastLogin: new Date('2026-03-11T07:55:00Z'),
   },
 ];
+
+const demoPasswordHash = hashSync('demo-password', 12);
 
 const demoEmployees = [
   {
@@ -109,7 +112,10 @@ export async function seedDatabase(databaseUrl?: string): Promise<SeedCounts> {
     await prisma.employee.deleteMany();
 
     await prisma.user.createMany({
-      data: demoUsers,
+      data: demoUsers.map((user) => ({
+        ...user,
+        passwordHash: demoPasswordHash,
+      })),
     });
 
     await prisma.employee.createMany({

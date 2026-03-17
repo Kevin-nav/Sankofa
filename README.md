@@ -1,6 +1,6 @@
 # Sankofa Payroll Platform
 
-Internal payroll, compliance, and audit demo platform for the Sankofa classroom scenario. The application is a safe simulation built with NestJS, Prisma, and SQLite. It models company workflows and seeded investigation evidence without implementing offensive behavior.
+Internal payroll, compliance, and audit platform for the Sankofa scenario. The application is built with NestJS, Prisma, and SQLite and models company workflows with seeded records for immediate use.
 
 ## Stack
 
@@ -9,6 +9,7 @@ Internal payroll, compliance, and audit demo platform for the Sankofa classroom 
 - SQLite
 - Handlebars server-rendered views
 - Jest and Supertest for end-to-end coverage
+- Docker for portable deployment
 
 ## What The App Includes
 
@@ -30,7 +31,17 @@ npm install
 2. Create a local `.env` with:
 
 ```env
-DATABASE_URL="file:./dev.db"
+NODE_ENV="development"
+PORT="3000"
+DATABASE_URL="file:./prisma/dev.db"
+SESSION_SECRET="replace-with-a-long-random-secret"
+SESSION_DB_PATH="./prisma/sessions.db"
+SESSION_COOKIE_MAX_AGE_MS="3600000"
+SESSION_COOKIE_SECURE="false"
+TRUST_PROXY="false"
+ENABLE_CSRF="true"
+LOGIN_RATE_LIMIT_WINDOW_MS="60000"
+LOGIN_RATE_LIMIT_MAX="20"
 ```
 
 3. Prepare the database and seed the demo records
@@ -47,16 +58,31 @@ npm run start:dev
 
 The default Nest development server runs at `http://localhost:3000`.
 
+## Docker Deployment
+
+Build and run with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The container runs Linux images, which can be hosted by Docker on Linux or Windows. The SQLite database and session files are persisted in the named volume mounted at `/data` in the container.
+
+Important production note: update `SESSION_SECRET` in `docker-compose.yml` (or inject it via your deployment platform) before deployment.
+
 ## Demo Accounts
 
 - `anita@sankofa.local` / `demo-password`
 - `felix@sankofa.local` / `demo-password`
 - `akosua.audit@sankofa.local` / `demo-password`
 
+Passwords are now stored as hashes in the seeded database.
+
 ## Useful Scripts
 
 - `npm run start:dev` - run the app in watch mode
 - `npm run build` - build the Nest app
+- `npm run start:prod` - run built output from `dist`
 - `npm run prisma:generate` - regenerate the Prisma client
 - `npm run prisma:push` - apply the schema to the SQLite database
 - `npm run db:seed` - reseed the demo data
@@ -72,6 +98,8 @@ The default Nest development server runs at `http://localhost:3000`.
 - `src/compliance` - compliance review queue and detail pages
 - `src/audit` - investigation evidence views
 - `src/views` - Handlebars templates
+- `src/config` - validated environment configuration
+- `src/health` - health and readiness endpoints
 - `prisma/schema.prisma` - database schema
 - `prisma/seed.ts` - fictional company and evidence seed data
 
@@ -87,3 +115,5 @@ Current automated coverage verifies:
 - dashboard metrics derived from seeded records
 - access denied and error page rendering
 - seed realism for the scenario data
+- environment validation behavior
+- health and readiness endpoints

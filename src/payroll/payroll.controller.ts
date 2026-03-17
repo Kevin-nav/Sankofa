@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Param,
-  Render,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -21,7 +20,6 @@ export class PayrollController {
   ) {}
 
   @Get()
-  @Render('payroll/index')
   async listBatches(@Req() request: Request) {
     const sessionUser = request.session.user;
 
@@ -42,7 +40,6 @@ export class PayrollController {
   }
 
   @Get(':batchCode')
-  @Render('payroll/show')
   async showBatch(@Req() request: Request, @Param('batchCode') batchCode: string) {
     const sessionUser = request.session.user;
 
@@ -63,7 +60,6 @@ export class PayrollController {
   }
 
   @Get(':batchCode/entries/:employeeCode')
-  @Render('payroll/entry')
   async showEntry(
     @Req() request: Request,
     @Param('batchCode') batchCode: string,

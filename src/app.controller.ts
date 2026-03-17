@@ -1,10 +1,9 @@
-import { Controller, Get, Redirect } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 
 @Controller()
 export class AppController {
   @Get()
-  @Redirect('/login')
-  getRoot(): { url: string } {
-    return { url: '/login' };
+  getRoot() {
+    return { status: 'ok', service: 'Sakofa API' };
   }
 }

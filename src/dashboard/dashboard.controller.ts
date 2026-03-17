@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Render,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -20,7 +19,6 @@ export class DashboardController {
   ) {}
 
   @Get()
-  @Render('dashboard/index')
   async index(@Req() request: Request) {
     const sessionUser = request.session.user;
 

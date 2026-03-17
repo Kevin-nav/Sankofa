@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { compare } from 'bcryptjs';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -12,7 +13,12 @@ export class AuthService {
       where: { email: normalizedEmail },
     });
 
-    if (!user || user.passwordHash !== password) {
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await compare(password, user.passwordHash);
+    if (!isPasswordValid) {
       return null;
     }
 

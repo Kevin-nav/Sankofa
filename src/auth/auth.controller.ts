@@ -3,29 +3,31 @@ import {
   Controller,
   Get,
   Post,
-  Render,
   Req,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 
-@Controller()
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Get('login')
-  @Render('login')
-  getLogin(@Req() request: Request): { title: string; error?: string } {
+  @Get('me')
+  getMe(@Req() request: Request) {
+    const csrfToken = request.session.csrfToken ?? '';
+
     if (request.session.user) {
       return {
-        title: 'Session Active',
-        error: 'You are already signed in to the internal platform.',
+        user: request.session.user,
+        csrfToken,
       };
     }
 
     return {
-      title: 'Internal Access',
+      user: null,
+      csrfToken,
     };
   }
 
@@ -33,17 +35,12 @@ export class AuthController {
   async postLogin(
     @Body('email') email: string,
     @Body('password') password: string,
-    @Res() response: Response,
     @Req() request: Request,
-  ): Promise<void> {
+  ) {
     const user = await this.authService.authenticate(email, password);
 
     if (!user) {
-      response.status(401).render('login', {
-        title: 'Internal Access',
-        error: 'Invalid credentials. Verify your assigned demo account.',
-      });
-      return;
+      throw new UnauthorizedException('Invalid credentials. Verify your assigned demo account.');
     }
 
     request.session.user = {
@@ -53,11 +50,11 @@ export class AuthController {
       role: user.role,
     };
 
-    response.redirect('/dashboard');
+    return { success: true, user: request.session.user };
   }
 
   @Post('logout')
-  async logout(@Req() request: Request, @Res() response: Response): Promise<void> {
+  async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     await new Promise<void>((resolve, reject) => {
       request.session.destroy((error) => {
         if (error) {
@@ -69,6 +66,7 @@ export class AuthController {
       });
     });
 
-    response.redirect('/login');
+    response.clearCookie('connect.sid'); // Assuming default connect.sid cookie
+    return { success: true };
   }
 }

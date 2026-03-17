@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: file:/data/app.db
+      SESSION_DB_PATH: /data/sessions.db
+      SESSION_SECRET: change-this-before-production
+      SESSION_COOKIE_SECURE: "false"
+      TRUST_PROXY: "true"
+      ENABLE_CSRF: "true"
+    volumes:
+      - sakofa_data:/data
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  sakofa_data:

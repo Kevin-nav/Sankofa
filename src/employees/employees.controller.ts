@@ -3,7 +3,6 @@ import {
   Get,
   Param,
   Query,
-  Render,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -22,7 +21,6 @@ export class EmployeesController {
   ) {}
 
   @Get()
-  @Render('employees/index')
   async listEmployees(@Req() request: Request, @Query('department') department?: string) {
     const sessionUser = request.session.user;
 
@@ -45,7 +43,6 @@ export class EmployeesController {
   }
 
   @Get(':employeeCode')
-  @Render('employees/show')
   async showEmployee(@Req() request: Request, @Param('employeeCode') employeeCode: string) {
     const sessionUser = request.session.user;
 

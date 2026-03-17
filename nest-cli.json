@@ -6,11 +6,11 @@
     "assets": [
       {
         "include": "views/**/*",
-        "outDir": "dist/src"
+        "outDir": "dist"
       },
       {
         "include": "public/**/*",
-        "outDir": "dist/src"
+        "outDir": "dist"
       }
     ]
   }

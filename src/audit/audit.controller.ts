@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Render,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -24,7 +23,6 @@ export class AuditController {
   ) {}
 
   @Get()
-  @Render('audit/index')
   async index(@Req() request: Request) {
     const sessionUser = request.session.user;
 

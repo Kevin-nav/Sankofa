@@ -1,0 +1,173 @@
+        PAYROLL DATA BREACH.
+
+
+
+A medium-sized company by the name Sankofa Payroll and Compliance Services Ltd undertakes a payroll verification check internally. Felix, an internal compliance officer, is instructed by his manager to review the quarterly payroll file to ensure all compliance rules and policies are being followed, and also that all details and salary records are correctly documented and recorded. Anita, who is also the Payroll Administrator for the same company sends the Official Payroll sheet via the company’s email to Felix to do the necessary. When Felix opens the file, the information he sees is just as expected and correct. However, unknown to both employees, the file had already been altered by an attacker remotely who had  gained access to the company’s internal system. Embedded inside the file is a hidden set of instructions that quietly installs a small background service on Felix’s computer when opened. Immediately after opening the file, a brief system-like message appears ”Syncing company policies...”, it disappears within seconds and Felix assumes it’s a normal system routine process and continues working. Weeks later, during a scheduled internal audit, security analysts detect irregular login times associated with Felix’s account and discover repeated outbound connections from his device to an unknown external address. 
+
+
+
+
+WHAT ACTUALLY HAPPENS.
+1. Before the Email
+The attacker already had access to the company’s internal system, making the file a legitimate one.
+
+2. Weaponized Document
+The real payroll file is modified to include hidden automation code, making the file a delivery mechanism of the code.
+
+3. Execution on Open
+When Felix opens the file, hidden instructions run automatically to install a persistent backdoor.
+
+4. Backdoor Installation
+A hidden background service is created, which gives the attacker long-term access without re-infecting.
+
+5. Brief System Message
+A short, boring system pop-up appears, which normalizes and camouflages unusual lagging system behavior.
+
+6. Delayed Remote Access
+The attacker waits several days before accessing the system again
+to reduce the chances of the activities being traced back to the file that was opened.
+
+7. Data Access
+Attacker explores payroll directories and downloads files which then leads to 
+Financial data theft of customers.
+
+8. Audit Detection
+Security team reviews:
+•	Login timestamps
+•	Remote session logs
+•	Outbound network connections
+•	Unrecognized background services
+Purpose: Discover anomaly patterns.
+
+
+NB: The attacker is neither Felix nor Anita. 
+
+
+
+
+CYBER ATTACK SCENARIO MODEL
+1. A criminal group that targets companies for money, data resale, and financial fraud.
+2. Initial Access Vector
+How they got in:
+•	Compromised employee credentials
+•	Infected workstation
+•	Exposed internal system
+•	Weak access control
+•	Phished account
+•	Misconfigured cloud storage
+•	Infected USB or shared drive
+
+3. Persistence Method
+What they do after access:
+•	Create hidden access points
+•	Maintain long-term access
+•	Avoid detection
+•	Stay inside the network quietly
+Meaning:
+They don’t attack immediately — they embed themselves into the environment.
+
+4. Weaponization Stage
+Action:
+They modify a legitimate payroll document and embed hidden malicious code into it.
+Key point:
+The file is:
+•	Real
+•	Legitimate
+•	Expected
+•	Trusted
+•	Internal
+•	Business-related
+So it doesn’t raise suspicion.
+
+5. Delivery Stage
+Method:
+Normal internal company email.
+No phishing.
+No fake sender.
+No suspicious links.
+No external domain.
+
+6. Exploitation Stage
+Trigger:
+Felix opens the document.
+What happens:
+Hidden instructions inside the file automatically run in the background.
+
+7. Installation Stage
+What gets installed:
+•	Data-stealing program
+•	Remote access tool
+•	Backdoor
+•	Persistence service
+Meaning:
+The attacker now has continuous access to Felix’s system.
+
+8. Command & Control (C2)
+What happens:
+The malware secretly connects to an external system controlled by the attacker.
+
+9. Data Exfiltration
+Data targeted:
+•	Payroll records
+•	Bank details
+•	Salary info
+•	Employee identities
+•	Internal documents
+•	Financial data
+Method:
+Slow, encrypted, hidden transfers.
+Why slow:
+So it doesn’t trigger alarms.
+
+
+10. Stealth & Deception Layer (Decoy)
+Fake system interface name:
+•	“Company IT System Verification.”
+•	“Security Validation.”
+•	“System Authentication.”
+•	“Network Verification.”
+
+
+11. User Behavior Layer
+Felix’s reaction:
+•	Sees normal payroll file
+•	Sees occasional IT-style message
+•	Assumes system maintenance
+•	Continues working
+•	Doesn’t report
+Realistic behavior.
+
+
+
+12. Lateral Movement Potential
+What attacker can now do:
+•	Move to other systems
+•	Access shared drives
+•	Access HR systems
+•	Access finance systems
+•	Access admin accounts
+•	Spread infection
+
+
+13. Discovery Phase
+Detection happens via:
+•	Internal audit
+•	Financial inconsistencies
+•	Data leakage investigation
+•	Compliance review
+•	Log analysis
+•	Network monitoring
+Not user reporting.
+
+
+14. Impact Phase
+Damage includes:
+•	Financial theft
+•	Identity theft risk
+•	Regulatory violations
+•	Legal exposure
+•	Reputation damage
+•	Trust breakdown
+•	Operational disruption
+•	Audit failure
+•	Compliance failure

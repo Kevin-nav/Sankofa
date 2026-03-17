@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Param,
-  Render,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -25,7 +24,6 @@ export class ComplianceController {
   ) {}
 
   @Get()
-  @Render('compliance/index')
   async listReviews(@Req() request: Request) {
     const sessionUser = request.session.user;
 
@@ -46,7 +44,6 @@ export class ComplianceController {
   }
 
   @Get(':batchCode')
-  @Render('compliance/show')
   async showReview(@Req() request: Request, @Param('batchCode') batchCode: string) {
     const sessionUser = request.session.user;
 

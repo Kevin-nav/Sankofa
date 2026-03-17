@@ -16,6 +16,13 @@ type SignupInput = {
   role: string;
 };
 
+type ResetPasswordInput = {
+  employeeCode: string;
+  name: string;
+  email: string;
+  password: string;
+};
+
 type AdminProvisionInput = {
   name: string;
   email: string;
@@ -33,6 +40,7 @@ export class AuthService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.ensureBootstrapSuperAdmin();
+    await this.ensureEmployeeCodes();
   }
 
   async authenticate(email: string, password: string): Promise<User | null> {
@@ -77,17 +85,21 @@ export class AuthService implements OnModuleInit {
     this.assertValidPassword(password);
     await this.assertEmailAvailable(email);
 
-    return this.prisma.user.create({
-      data: {
-        name,
-        email,
-        passwordHash: await hash(password, 10),
-        role,
-        department: this.getDepartmentForRole(role),
-        status: 'Active',
-        lastLogin: new Date(),
-        lastPasswordChangeAt: new Date(),
-      },
+    return this.prisma.$transaction(async (transaction) => {
+      const now = new Date();
+      return transaction.user.create({
+        data: {
+          name,
+          email,
+          employeeCode: await this.generateEmployeeCode(transaction),
+          passwordHash: await hash(password, 10),
+          role,
+          department: this.getDepartmentForRole(role),
+          status: 'Active',
+          lastLogin: now,
+          lastPasswordChangeAt: now,
+        },
+      });
     });
   }
 
@@ -100,17 +112,21 @@ export class AuthService implements OnModuleInit {
     this.assertValidPassword(password);
     await this.assertEmailAvailable(email);
 
-    return this.prisma.user.create({
-      data: {
-        name,
-        email,
-        passwordHash: await hash(password, 10),
-        role,
-        department: this.getDepartmentForRole(role),
-        status: 'Active',
-        mustChangePassword: input.mustChangePassword ?? false,
-        lastPasswordChangeAt: new Date(),
-      },
+    return this.prisma.$transaction(async (transaction) => {
+      const now = new Date();
+      return transaction.user.create({
+        data: {
+          name,
+          email,
+          employeeCode: await this.generateEmployeeCode(transaction),
+          passwordHash: await hash(password, 10),
+          role,
+          department: this.getDepartmentForRole(role),
+          status: 'Active',
+          mustChangePassword: input.mustChangePassword ?? false,
+          lastPasswordChangeAt: now,
+        },
+      });
     });
   }
 
@@ -153,15 +169,34 @@ export class AuthService implements OnModuleInit {
   }
 
   async resetUserPassword(userId: number, newPassword: string): Promise<User> {
-    this.assertValidPassword(newPassword);
+    return this.updatePassword(userId, newPassword, {
+      mustChangePassword: true,
+    });
+  }
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        passwordHash: await hash(newPassword, 12),
-        mustChangePassword: true,
-        passwordResetAt: new Date(),
+  async resetEmployeePassword(input: ResetPasswordInput): Promise<User> {
+    const employeeCode = this.normalizeEmployeeCode(input.employeeCode);
+    const name = this.normalizeName(input.name);
+    const email = this.normalizeEmail(input.email);
+    this.assertValidPassword(input.password);
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        employeeCode,
+        name,
+        email,
+        isAdmin: false,
+        status: 'Active',
       },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('We could not verify an active employee with those details.');
+    }
+
+    return this.updatePassword(user.id, input.password, {
+      mustChangePassword: false,
     });
   }
 
@@ -243,6 +278,7 @@ export class AuthService implements OnModuleInit {
       id: user.id,
       name: user.name,
       email: user.email,
+      employeeCode: user.employeeCode,
       role: user.role,
       isAdmin: user.isAdmin,
       isSuperAdmin: user.isSuperAdmin,
@@ -295,6 +331,52 @@ export class AuthService implements OnModuleInit {
     });
   }
 
+  private async ensureEmployeeCodes(): Promise<void> {
+    const usersMissingCodes = await this.prisma.user.findMany({
+      where: {
+        isAdmin: false,
+        employeeCode: null,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { id: true },
+    });
+
+    if (usersMissingCodes.length === 0) {
+      return;
+    }
+
+    let nextEmployeeCodeNumber = await this.getNextEmployeeCodeNumber(this.prisma);
+
+    await this.prisma.$transaction(
+      usersMissingCodes.map((user) =>
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            employeeCode: this.formatEmployeeCode(nextEmployeeCodeNumber++),
+          },
+        }),
+      ),
+    );
+  }
+
+  private async updatePassword(
+    userId: number,
+    password: string,
+    options: { mustChangePassword: boolean },
+  ): Promise<User> {
+    this.assertValidPassword(password);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: await hash(password, 12),
+        mustChangePassword: options.mustChangePassword,
+        passwordResetAt: new Date(),
+        lastPasswordChangeAt: new Date(),
+      },
+    });
+  }
+
   private normalizeName(name: string): string {
     const normalizedName = name.trim();
     if (!normalizedName) {
@@ -309,6 +391,14 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('A valid email address is required.');
     }
     return normalizedEmail;
+  }
+
+  private normalizeEmployeeCode(employeeCode: string): string {
+    const normalizedEmployeeCode = employeeCode.trim().toUpperCase();
+    if (!normalizedEmployeeCode) {
+      throw new BadRequestException('Employee ID is required.');
+    }
+    return normalizedEmployeeCode;
   }
 
   private assertValidPassword(password: string): void {
@@ -363,5 +453,45 @@ export class AuthService implements OnModuleInit {
       default:
         return 'Operations';
     }
+  }
+
+  private async generateEmployeeCode(prisma: Prisma.TransactionClient): Promise<string> {
+    const nextEmployeeCodeNumber = await this.getNextEmployeeCodeNumber(prisma);
+    return this.formatEmployeeCode(nextEmployeeCodeNumber);
+  }
+
+  private async getNextEmployeeCodeNumber(
+    prisma: Prisma.TransactionClient | PrismaService,
+  ): Promise<number> {
+    const [userEmployeeCodes, employeeDirectoryCodes] = await Promise.all([
+      prisma.user.findMany({
+        where: { employeeCode: { not: null } },
+        select: { employeeCode: true },
+      }),
+      prisma.employee.findMany({
+        select: { employeeCode: true },
+      }),
+    ]);
+
+    const highestEmployeeCodeNumber = Math.max(
+      1000,
+      ...userEmployeeCodes.map((entry) => this.extractEmployeeCodeNumber(entry.employeeCode)),
+      ...employeeDirectoryCodes.map((entry) => this.extractEmployeeCodeNumber(entry.employeeCode)),
+    );
+
+    return highestEmployeeCodeNumber + 1;
+  }
+
+  private extractEmployeeCodeNumber(employeeCode: string | null): number {
+    if (!employeeCode) {
+      return 1000;
+    }
+
+    const match = employeeCode.match(/(\d+)$/);
+    return match ? Number.parseInt(match[1], 10) : 1000;
+  }
+
+  private formatEmployeeCode(value: number): string {
+    return `SK-${String(value).padStart(4, '0')}`;
   }
 }

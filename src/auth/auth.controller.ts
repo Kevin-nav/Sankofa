@@ -70,6 +70,29 @@ export class AuthController {
     return { success: true, user: request.session.user, csrfToken: request.session.csrfToken ?? '' };
   }
 
+  @Post('reset-password')
+  @HttpCode(200)
+  async postResetPassword(
+    @Body('employeeCode') employeeCode: string,
+    @Body('name') name: string,
+    @Body('email') email: string,
+    @Body('password') password: string,
+    @Req() request: Request,
+  ) {
+    await this.authService.resetEmployeePassword({
+      employeeCode,
+      name,
+      email,
+      password,
+    });
+
+    return {
+      success: true,
+      message: 'Password updated. Sign in with your new password.',
+      csrfToken: request.session.csrfToken ?? '',
+    };
+  }
+
   @Post('logout')
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     await new Promise<void>((resolve, reject) => {

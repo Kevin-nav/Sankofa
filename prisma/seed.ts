@@ -19,6 +19,7 @@ const demoUsers = [
   {
     name: 'Anita Mensah',
     email: 'anita@sankofa.local',
+    employeeCode: 'SK-1004',
     passwordHash: 'demo-password',
     role: UserRole.PAYROLL_ADMIN,
     department: 'Payroll',
@@ -28,6 +29,7 @@ const demoUsers = [
   {
     name: 'Felix Owusu',
     email: 'felix@sankofa.local',
+    employeeCode: 'SK-1005',
     passwordHash: 'demo-password',
     role: UserRole.COMPLIANCE_OFFICER,
     department: 'Compliance',
@@ -37,6 +39,7 @@ const demoUsers = [
   {
     name: 'Akosua Lamptey',
     email: 'akosua.audit@sankofa.local',
+    employeeCode: 'SK-1006',
     passwordHash: 'demo-password',
     role: UserRole.AUDIT_ANALYST,
     department: 'Audit',
@@ -46,6 +49,7 @@ const demoUsers = [
   {
     name: 'Yaw Asante',
     email: 'it.admin@sankofa.local',
+    employeeCode: null,
     passwordHash: 'demo-password',
     role: UserRole.PAYROLL_ADMIN,
     department: 'Information Security',

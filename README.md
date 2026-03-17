@@ -123,6 +123,8 @@ docker compose --env-file deploy/.env.production -f deploy/docker-compose.vps.ym
 
 For the first deployment, leave `SEED_ON_BOOT=true` so the container seeds the initial demo data and bootstrap admin. After the first successful start, change it to `SEED_ON_BOOT=false` and redeploy so future restarts do not attempt reseeding.
 
+When shipping schema updates to an existing VPS volume, keep `PRISMA_AUTO_ACCEPT_DATA_LOSS=true` so startup can retry `prisma db push` with `--accept-data-loss` only when Prisma explicitly requires it. Set this to `false` if you want startup to fail instead of applying potentially destructive schema changes automatically.
+
 4. Configure Cloudflare Tunnel to route:
 
 - `app.sankofa-company.org` -> employee frontend

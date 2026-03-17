@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { AuthShell } from '../components/AuthShell';
 
 export const Login: React.FC = () => {
@@ -56,9 +56,14 @@ export const Login: React.FC = () => {
         panelTitle="Sign in"
         panelDescription="Enter your internal credentials to continue."
         footer={
-          <p>
-            New to the platform? <Link to="/signup">Create an account</Link>
-          </p>
+          <div className="auth-action-stack">
+            <p>
+              Forgot your password? <Link to="/reset-password">Verify your employee details</Link>
+            </p>
+            <p>
+              New to the platform? <Link to="/signup">Create an account</Link>
+            </p>
+          </div>
         }
       >
         <form className="auth-form" onSubmit={handleSubmit}>

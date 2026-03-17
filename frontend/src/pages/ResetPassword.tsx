@@ -3,20 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthShell } from '../components/AuthShell';
 import { useAuth } from '../context/useAuth';
-import { AUTH_ROLE_OPTIONS, type AuthRole } from '../lib/auth';
 
-export const Signup: React.FC = () => {
+export const ResetPassword: React.FC = () => {
+  const [employeeCode, setEmployeeCode] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState<AuthRole>('PAYROLL_ADMIN');
   const [error, setError] = useState('');
+  const [successCode, setSuccessCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { csrfToken, login, setCsrfToken, user, loading } = useAuth();
+  const { csrfToken, setCsrfToken, user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && user) {
@@ -27,6 +27,7 @@ export const Signup: React.FC = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
+    setSuccessCode('');
 
     if (password.length < 8) {
       setError('Password must be at least 8 characters long.');
@@ -41,26 +42,31 @@ export const Signup: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post('/api/auth/signup', {
+      const normalizedEmployeeCode = employeeCode.trim().toUpperCase();
+      const response = await axios.post('/api/auth/reset-password', {
+        employeeCode: normalizedEmployeeCode,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password,
-        role,
         _csrf: csrfToken,
       });
 
       if (response.data.success) {
-        login(response.data.user, response.data.csrfToken ?? csrfToken);
-        navigate('/dashboard', { replace: true });
+        setSuccessCode(normalizedEmployeeCode);
+        setPassword('');
+        setConfirmPassword('');
+        if (typeof response.data.csrfToken === 'string') {
+          setCsrfToken(response.data.csrfToken);
+        }
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Unable to create the account.');
+        setError(err.response?.data?.message || 'We could not reset your password.');
         if (typeof err.response?.data?.csrfToken === 'string') {
           setCsrfToken(err.response.data.csrfToken);
         }
       } else {
-        setError('Unable to create the account.');
+        setError('We could not reset your password.');
       }
     } finally {
       setIsSubmitting(false);
@@ -70,27 +76,50 @@ export const Signup: React.FC = () => {
   return (
     <div className="app-shell">
       <AuthShell
-        eyebrow="Create Internal Profile"
-        title="Open a role-based access point in minutes."
-        description="Create your account, choose the team function you support, and receive a private employee ID that you can keep for future password resets."
-        panelTitle="Sign up"
-        panelDescription="Set up your profile, choose the internal role you need, and we will issue your employee ID automatically."
+        eyebrow="Employee Verification"
+        title="Reset your password with your private employee ID."
+        description="Verify your existing Sankofa employee account with your employee ID, name, and email, then set a new password and return to sign in."
+        panelTitle="Reset password"
+        panelDescription="This page is only for existing employee accounts. Use the exact details assigned to you."
         footer={
-          <p>
-            Already registered? <Link to="/login">Return to sign in</Link>
-          </p>
+          <div className="auth-action-stack">
+            <p>
+              Remembered your password? <Link to="/login">Return to sign in</Link>
+            </p>
+            <p>
+              Need a new account first? <Link to="/signup">Create an account</Link>
+            </p>
+          </div>
         }
       >
         <form className="auth-form" onSubmit={handleSubmit}>
           {error ? <div className="form-alert">{error}</div> : null}
+          {successCode ? (
+            <div className="form-success">
+              Password updated successfully for employee ID
+              <strong>{successCode}</strong>
+              <Link to="/login">Continue to login</Link>
+            </div>
+          ) : null}
+
+          <label className="field">
+            <span>Employee ID</span>
+            <input
+              type="text"
+              placeholder="SK-1004"
+              value={employeeCode}
+              onChange={(event) => setEmployeeCode(event.target.value)}
+              required
+            />
+          </label>
 
           <label className="field">
             <span>Full name</span>
             <input
               type="text"
-              placeholder="Kojo Annan"
+              placeholder="Anita Mensah"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
               required
             />
           </label>
@@ -99,37 +128,22 @@ export const Signup: React.FC = () => {
             <span>Email</span>
             <input
               type="email"
-              placeholder="kojo.annan@sankofa.local"
+              placeholder="anita@sankofa.local"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
             />
           </label>
 
-          <label className="field">
-            <span>Role</span>
-            <select value={role} onChange={(e) => setRole(e.target.value as AuthRole)}>
-              {AUTH_ROLE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="form-note">
-            Your employee ID will be assigned automatically after signup and shown in your profile for future resets.
-          </div>
-
           <div className="field-grid">
             <label className="field password-field">
-              <span>Password</span>
+              <span>New password</span>
               <div className="password-input-wrap">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="At least 8 characters"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(event) => setPassword(event.target.value)}
                   required
                 />
                 <button
@@ -149,7 +163,7 @@ export const Signup: React.FC = () => {
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Repeat your password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
                   required
                 />
                 <button
@@ -164,7 +178,7 @@ export const Signup: React.FC = () => {
           </div>
 
           <button className="primary-button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? 'Creating account...' : 'Create account'}
+            {isSubmitting ? 'Updating password...' : 'Set new password'}
           </button>
         </form>
       </AuthShell>

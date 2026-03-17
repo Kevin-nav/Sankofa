@@ -14,6 +14,8 @@ Internal payroll, compliance, and audit platform for the Sankofa scenario. The a
 ## What The App Includes
 
 - role-based login for Payroll Admin, Compliance Officer, and Audit Analyst
+- employee signup that issues a private employee ID for future verification
+- employee self-service password reset using employee ID, name, and email
 - employee directory with payroll-linked records
 - quarterly payroll batches and per-employee payroll entries
 - compliance review queue with flagged issues
@@ -130,9 +132,9 @@ Recommended production note: keep the application origin private behind Cloudfla
 
 ## Demo Accounts
 
-- `anita@sankofa.local` / `demo-password`
-- `felix@sankofa.local` / `demo-password`
-- `akosua.audit@sankofa.local` / `demo-password`
+- `anita@sankofa.local` / `demo-password` / employee ID `SK-1004`
+- `felix@sankofa.local` / `demo-password` / employee ID `SK-1005`
+- `akosua.audit@sankofa.local` / `demo-password` / employee ID `SK-1006`
 
 Passwords are now stored as hashes in the seeded database.
 

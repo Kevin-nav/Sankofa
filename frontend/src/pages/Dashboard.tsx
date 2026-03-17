@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { formatRoleLabel } from '../lib/auth';
 
@@ -73,6 +73,12 @@ export const Dashboard: React.FC = () => {
           <span className="profile-overline">Signed-in profile</span>
           <h2>{user?.name}</h2>
           <p>{user?.email}</p>
+          {user?.employeeCode ? (
+            <div className="profile-identifier">
+              <span>Employee ID</span>
+              <strong>{user.employeeCode}</strong>
+            </div>
+          ) : null}
           <div className="profile-badges">
             <span>{formatRoleLabel(user?.role)}</span>
             <span>Session active</span>

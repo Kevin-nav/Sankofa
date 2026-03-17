@@ -66,6 +66,7 @@ describe('Auth flow (e2e)', () => {
         expect(response.body.user).toMatchObject({
           name: 'Anita Mensah',
           email: 'anita@sankofa.local',
+          employeeCode: 'SK-1004',
           role: 'PAYROLL_ADMIN',
         });
       });
@@ -119,6 +120,7 @@ describe('Auth flow (e2e)', () => {
           email: 'kojo.annan@sankofa.local',
           role: 'AUDIT_ANALYST',
         });
+        expect(response.body.user.employeeCode).toMatch(/^SK-\d{4}$/);
         expect(typeof response.body.csrfToken).toBe('string');
         expect(response.body.csrfToken.length).toBeGreaterThan(0);
       });
@@ -132,6 +134,7 @@ describe('Auth flow (e2e)', () => {
           email: 'kojo.annan@sankofa.local',
           role: 'AUDIT_ANALYST',
         });
+        expect(response.body.user.employeeCode).toMatch(/^SK-\d{4}$/);
       });
   });
 
@@ -147,6 +150,72 @@ describe('Auth flow (e2e)', () => {
       .expect(409)
       .expect((response) => {
         expect(response.body.message).toBe('An account with that email already exists.');
+      });
+  });
+
+  it('resets an existing employee password after verifying employee ID, name, and email', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .send({
+        employeeCode: 'SK-1004',
+        name: 'Anita Mensah',
+        email: 'anita@sankofa.local',
+        password: 'updated-pass-1',
+      })
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.success).toBe(true);
+        expect(response.body.message).toContain('Password updated');
+      });
+
+    await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: 'anita@sankofa.local',
+        password: 'demo-password',
+      })
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: 'anita@sankofa.local',
+        password: 'updated-pass-1',
+      })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.success).toBe(true);
+        expect(response.body.user.employeeCode).toBe('SK-1004');
+      });
+  });
+
+  it('rejects reset when employee verification details do not match', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .send({
+        employeeCode: 'SK-9999',
+        name: 'Anita Mensah',
+        email: 'anita@sankofa.local',
+        password: 'updated-pass-1',
+      })
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message).toBe('We could not verify an active employee with those details.');
+      });
+  });
+
+  it('rejects reset when the new password is too short', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .send({
+        employeeCode: 'SK-1005',
+        name: 'Felix Owusu',
+        email: 'felix@sankofa.local',
+        password: 'short',
+      })
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message).toBe('Password must be at least 8 characters long.');
       });
   });
 });

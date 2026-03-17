@@ -24,6 +24,7 @@ model User {
   id           Int        @id @default(autoincrement())
   name         String
   email        String     @unique
+  employeeCode String?    @unique
   passwordHash String
   role         UserRole
   department   String

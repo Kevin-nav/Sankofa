@@ -9,34 +9,37 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { AdminScope } from '@prisma/client';
-import { AuthService } from '../auth/auth.service';
-import { SessionGuard } from '../auth/session.guard';
-import { AdminGuard } from './admin.guard';
-import { AdminPermissionGuard } from './admin-permission.guard';
-import { RequireAdminScopes } from './decorators/admin-scopes.decorator';
-import { AdminService } from './admin.service';
+} from "@nestjs/common";
+import { Request } from "express";
+import { AdminScope } from "@prisma/client";
+import { AuthService } from "../auth/auth.service";
+import { SessionGuard } from "../auth/session.guard";
+import { AdminGuard } from "./admin.guard";
+import { AdminPermissionGuard } from "./admin-permission.guard";
+import { RequireAdminScopes } from "./decorators/admin-scopes.decorator";
+import { AdminService } from "./admin.service";
 
-@Controller('admin')
+@Controller("admin")
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly authService: AuthService,
   ) {}
 
-  @Post('auth/login')
+  @Post("auth/login")
   @HttpCode(200)
   async login(
-    @Body('email') email: string,
-    @Body('password') password: string,
+    @Body("email") email: string,
+    @Body("password") password: string,
     @Req() request: Request,
   ) {
-    const sessionUser = await this.authService.getAdminSessionUser(email, password);
+    const sessionUser = await this.authService.getAdminSessionUser(
+      email,
+      password,
+    );
 
     if (!sessionUser) {
-      throw new UnauthorizedException('Invalid admin credentials.');
+      throw new UnauthorizedException("Invalid admin credentials.");
     }
 
     request.session.user = sessionUser;
@@ -44,26 +47,26 @@ export class AdminController {
 
     await this.authService.writeAdminAuditLog({
       actorUserId: sessionUser.id,
-      action: 'ADMIN_LOGIN',
-      description: 'Administrator signed in successfully.',
+      action: "ADMIN_LOGIN",
+      description: "Administrator signed in successfully.",
       sourceIp: request.ip,
-      userAgent: request.get('user-agent') ?? '',
+      userAgent: request.get("user-agent") ?? "",
     });
 
     return {
       success: true,
       user: request.session.user,
-      csrfToken: request.session.csrfToken ?? '',
+      csrfToken: request.session.csrfToken ?? "",
     };
   }
 
-  @Get('session')
+  @Get("session")
   @UseGuards(SessionGuard, AdminGuard)
   async session(@Req() request: Request) {
     return this.adminService.getSession(request.session.user!.id);
   }
 
-  @Get('users')
+  @Get("users")
   @UseGuards(SessionGuard, AdminGuard, AdminPermissionGuard)
   @RequireAdminScopes(AdminScope.USER_ADMIN)
   async listUsers() {
@@ -72,57 +75,62 @@ export class AdminController {
     };
   }
 
-  @Post('users')
+  @Post("users")
   @UseGuards(SessionGuard, AdminGuard, AdminPermissionGuard)
   @RequireAdminScopes(AdminScope.USER_ADMIN)
   async createUser(
-    @Body('name') name: string,
-    @Body('email') email: string,
-    @Body('role') role: string,
+    @Body("name") name: string,
+    @Body("email") email: string,
+    @Body("role") role: string,
     @Req() request: Request,
   ) {
-    const { user, temporaryPassword } = await this.adminService.createEmployeeUser({
-      name,
-      email,
-      role,
-    });
+    const { user, temporaryPassword } =
+      await this.adminService.createEmployeeUser({
+        name,
+        email,
+        role,
+      });
 
     await this.authService.writeAdminAuditLog({
       actorUserId: request.session.user!.id,
       targetUserId: user.id,
-      action: 'USER_CREATED',
+      action: "USER_CREATED",
       description: `Created employee account for ${user.email}.`,
       sourceIp: request.ip,
-      userAgent: request.get('user-agent') ?? '',
+      userAgent: request.get("user-agent") ?? "",
     });
 
     return { success: true, user, temporaryPassword };
   }
 
-  @Post('users/:id/reset-password')
+  @Post("users/:id/reset-password")
   @UseGuards(SessionGuard, AdminGuard, AdminPermissionGuard)
   @RequireAdminScopes(AdminScope.SECURITY_ADMIN)
-  async resetPassword(@Param('id', ParseIntPipe) userId: number, @Req() request: Request) {
-    const { user, temporaryPassword } = await this.adminService.resetPassword(userId);
+  async resetPassword(
+    @Param("id", ParseIntPipe) userId: number,
+    @Req() request: Request,
+  ) {
+    const { user, temporaryPassword } =
+      await this.adminService.resetPassword(userId);
 
     await this.authService.writeAdminAuditLog({
       actorUserId: request.session.user!.id,
       targetUserId: user.id,
-      action: 'PASSWORD_RESET',
+      action: "PASSWORD_RESET",
       description: `Issued a forced password reset for ${user.email}.`,
       sourceIp: request.ip,
-      userAgent: request.get('user-agent') ?? '',
+      userAgent: request.get("user-agent") ?? "",
     });
 
     return { success: true, user, temporaryPassword };
   }
 
-  @Post('users/:id/status')
+  @Post("users/:id/status")
   @UseGuards(SessionGuard, AdminGuard, AdminPermissionGuard)
   @RequireAdminScopes(AdminScope.SECURITY_ADMIN)
   async updateStatus(
-    @Param('id', ParseIntPipe) userId: number,
-    @Body('status') status: 'Active' | 'Suspended',
+    @Param("id", ParseIntPipe) userId: number,
+    @Body("status") status: "Active" | "Suspended",
     @Req() request: Request,
   ) {
     const user = await this.adminService.updateUserStatus(userId, status);
@@ -130,27 +138,55 @@ export class AdminController {
     await this.authService.writeAdminAuditLog({
       actorUserId: request.session.user!.id,
       targetUserId: user.id,
-      action: 'USER_STATUS_CHANGED',
+      action: "USER_STATUS_CHANGED",
       description: `Changed ${user.email} status to ${status}.`,
       sourceIp: request.ip,
-      userAgent: request.get('user-agent') ?? '',
+      userAgent: request.get("user-agent") ?? "",
     });
 
     return { success: true, user };
   }
 
-  @Post('admins')
+  @Get("users/:id/password")
+  @UseGuards(SessionGuard, AdminGuard)
+  async getEmployeePassword(
+    @Param("id", ParseIntPipe) userId: number,
+    @Req() request: Request,
+  ) {
+    if (!request.session.user?.isSuperAdmin) {
+      throw new UnauthorizedException(
+        "Only a super admin can view employee passwords.",
+      );
+    }
+
+    const password = await this.authService.getDecryptedPassword(userId);
+
+    await this.authService.writeAdminAuditLog({
+      actorUserId: request.session.user!.id,
+      targetUserId: userId,
+      action: "VIEW_EMPLOYEE_PASSWORD",
+      description: `Viewed decrypted password for user ${userId}.`,
+      sourceIp: request.ip,
+      userAgent: request.get("user-agent") ?? "",
+    });
+
+    return { success: true, password };
+  }
+
+  @Post("admins")
   @UseGuards(SessionGuard, AdminGuard, AdminPermissionGuard)
   @RequireAdminScopes(AdminScope.ADMIN_ADMIN)
   async createAdmin(
-    @Body('name') name: string,
-    @Body('email') email: string,
-    @Body('scopes') scopes: AdminScope[],
-    @Body('isSuperAdmin') isSuperAdmin: boolean,
+    @Body("name") name: string,
+    @Body("email") email: string,
+    @Body("scopes") scopes: AdminScope[],
+    @Body("isSuperAdmin") isSuperAdmin: boolean,
     @Req() request: Request,
   ) {
     if (isSuperAdmin && !request.session.user?.isSuperAdmin) {
-      throw new UnauthorizedException('Only a super admin can create another super admin.');
+      throw new UnauthorizedException(
+        "Only a super admin can create another super admin.",
+      );
     }
 
     const { user, temporaryPassword } = await this.adminService.createAdmin({
@@ -163,37 +199,43 @@ export class AdminController {
     await this.authService.writeAdminAuditLog({
       actorUserId: request.session.user!.id,
       targetUserId: user.id,
-      action: 'ADMIN_CREATED',
+      action: "ADMIN_CREATED",
       description: `Created admin account for ${user.email}.`,
       sourceIp: request.ip,
-      userAgent: request.get('user-agent') ?? '',
+      userAgent: request.get("user-agent") ?? "",
     });
 
     return { success: true, user, temporaryPassword };
   }
 
-  @Post('admins/:id/scopes')
+  @Post("admins/:id/scopes")
   @UseGuards(SessionGuard, AdminGuard, AdminPermissionGuard)
   @RequireAdminScopes(AdminScope.ADMIN_ADMIN)
   async updateAdminScopes(
-    @Param('id', ParseIntPipe) userId: number,
-    @Body('scopes') scopes: AdminScope[],
-    @Body('isSuperAdmin') isSuperAdmin: boolean,
+    @Param("id", ParseIntPipe) userId: number,
+    @Body("scopes") scopes: AdminScope[],
+    @Body("isSuperAdmin") isSuperAdmin: boolean,
     @Req() request: Request,
   ) {
     if (isSuperAdmin && !request.session.user?.isSuperAdmin) {
-      throw new UnauthorizedException('Only a super admin can grant super admin privileges.');
+      throw new UnauthorizedException(
+        "Only a super admin can grant super admin privileges.",
+      );
     }
 
-    const user = await this.adminService.updateAdminScopes(userId, scopes, isSuperAdmin);
+    const user = await this.adminService.updateAdminScopes(
+      userId,
+      scopes,
+      isSuperAdmin,
+    );
 
     await this.authService.writeAdminAuditLog({
       actorUserId: request.session.user!.id,
       targetUserId: user.id,
-      action: 'ADMIN_SCOPES_UPDATED',
+      action: "ADMIN_SCOPES_UPDATED",
       description: `Updated admin scopes for user ${user.id}.`,
       sourceIp: request.ip,
-      userAgent: request.get('user-agent') ?? '',
+      userAgent: request.get("user-agent") ?? "",
     });
 
     return { success: true, user };

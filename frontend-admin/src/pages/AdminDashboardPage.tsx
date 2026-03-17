@@ -1,21 +1,35 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
-import axios from 'axios';
-import { useAuth } from '../AuthContext';
-import type { AdminScope, AuditEntry, ManagedUser, SessionUser } from '../types';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import axios from "axios";
+import { useAuth } from "../AuthContext";
+import type {
+  AdminScope,
+  AuditEntry,
+  ManagedUser,
+  SessionUser,
+} from "../types";
 
-const scopeOptions: AdminScope[] = ['USER_ADMIN', 'SECURITY_ADMIN', 'AUDIT_ADMIN', 'ADMIN_ADMIN'];
-const roleOptions = ['PAYROLL_ADMIN', 'COMPLIANCE_OFFICER', 'AUDIT_ANALYST'];
+const scopeOptions: AdminScope[] = [
+  "USER_ADMIN",
+  "SECURITY_ADMIN",
+  "AUDIT_ADMIN",
+  "ADMIN_ADMIN",
+];
+const roleOptions = ["PAYROLL_ADMIN", "COMPLIANCE_OFFICER", "AUDIT_ANALYST"];
 
 export function AdminDashboardPage() {
   const { user, csrfToken, logout } = useAuth();
   const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
   const [recentAuditLogs, setRecentAuditLogs] = useState<AuditEntry[]>([]);
-  const [message, setMessage] = useState('');
-  const [employeeForm, setEmployeeForm] = useState({ name: '', email: '', role: 'PAYROLL_ADMIN' });
+  const [message, setMessage] = useState("");
+  const [employeeForm, setEmployeeForm] = useState({
+    name: "",
+    email: "",
+    role: "PAYROLL_ADMIN",
+  });
   const [adminForm, setAdminForm] = useState({
-    name: '',
-    email: '',
-    scopes: ['USER_ADMIN'] as AdminScope[],
+    name: "",
+    email: "",
+    scopes: ["USER_ADMIN"] as AdminScope[],
     isSuperAdmin: false,
   });
 
@@ -25,8 +39,8 @@ export function AdminDashboardPage() {
 
   async function refreshData() {
     const [usersResponse, sessionResponse] = await Promise.all([
-      axios.get('/api/admin/users'),
-      axios.get('/api/admin/session'),
+      axios.get("/api/admin/users"),
+      axios.get("/api/admin/session"),
     ]);
 
     setManagedUsers(usersResponse.data.users);
@@ -35,39 +49,52 @@ export function AdminDashboardPage() {
 
   async function createEmployee(event: FormEvent) {
     event.preventDefault();
-    const response = await axios.post('/api/admin/users', {
+    const response = await axios.post("/api/admin/users", {
       ...employeeForm,
       _csrf: csrfToken,
     });
-    setMessage(`Created ${response.data.user.email}. Temporary password: ${response.data.temporaryPassword}`);
-    setEmployeeForm({ name: '', email: '', role: 'PAYROLL_ADMIN' });
+    setMessage(
+      `Created ${response.data.user.email}. Temporary password: ${response.data.temporaryPassword}`,
+    );
+    setEmployeeForm({ name: "", email: "", role: "PAYROLL_ADMIN" });
     await refreshData();
   }
 
   async function createAdmin(event: FormEvent) {
     event.preventDefault();
-    const response = await axios.post('/api/admin/admins', {
+    const response = await axios.post("/api/admin/admins", {
       ...adminForm,
       _csrf: csrfToken,
     });
     setMessage(
       `Created admin ${response.data.user.email}. Temporary password: ${response.data.temporaryPassword}`,
     );
-    setAdminForm({ name: '', email: '', scopes: ['USER_ADMIN'], isSuperAdmin: false });
+    setAdminForm({
+      name: "",
+      email: "",
+      scopes: ["USER_ADMIN"],
+      isSuperAdmin: false,
+    });
     await refreshData();
   }
 
   async function resetPassword(targetUser: ManagedUser) {
-    const response = await axios.post(`/api/admin/users/${targetUser.id}/reset-password`, {
-      _csrf: csrfToken,
-    });
+    const response = await axios.post(
+      `/api/admin/users/${targetUser.id}/reset-password`,
+      {
+        _csrf: csrfToken,
+      },
+    );
     setMessage(
       `Reset password for ${targetUser.email}. Temporary password: ${response.data.temporaryPassword}`,
     );
     await refreshData();
   }
 
-  async function updateStatus(targetUser: ManagedUser, status: 'Active' | 'Suspended') {
+  async function updateStatus(
+    targetUser: ManagedUser,
+    status: "Active" | "Suspended",
+  ) {
     await axios.post(`/api/admin/users/${targetUser.id}/status`, {
       status,
       _csrf: csrfToken,
@@ -76,9 +103,22 @@ export function AdminDashboardPage() {
     await refreshData();
   }
 
+  async function viewPassword(targetUser: ManagedUser) {
+    try {
+      const response = await axios.get(
+        `/api/admin/users/${targetUser.id}/password`,
+      );
+      setMessage(`Password for ${targetUser.email}: ${response.data.password}`);
+    } catch (error: any) {
+      setMessage(
+        error.response?.data?.message || "Failed to retrieve password.",
+      );
+    }
+  }
+
   async function onLogout() {
     await logout();
-    window.location.href = '/login';
+    window.location.href = "/login";
   }
 
   const adminUser = user as SessionUser;
@@ -90,7 +130,8 @@ export function AdminDashboardPage() {
           <span className="eyebrow">Secure admin portal</span>
           <h1>Account administration for Sankofa.</h1>
           <p>
-            Signed in as {adminUser.name} ({adminUser.email}). Scopes: {adminUser.adminScopes.join(', ')}.
+            Signed in as {adminUser.name} ({adminUser.email}). Scopes:{" "}
+            {adminUser.adminScopes.join(", ")}.
           </p>
         </div>
         <button onClick={onLogout} className="secondary-button" type="button">
@@ -109,7 +150,10 @@ export function AdminDashboardPage() {
               <input
                 value={employeeForm.name}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setEmployeeForm((current) => ({ ...current, name: event.target.value }))
+                  setEmployeeForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
                 }
                 required
               />
@@ -119,7 +163,10 @@ export function AdminDashboardPage() {
               <input
                 value={employeeForm.email}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setEmployeeForm((current) => ({ ...current, email: event.target.value }))
+                  setEmployeeForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
                 }
                 type="email"
                 required
@@ -130,7 +177,10 @@ export function AdminDashboardPage() {
               <select
                 value={employeeForm.role}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-                  setEmployeeForm((current) => ({ ...current, role: event.target.value }))
+                  setEmployeeForm((current) => ({
+                    ...current,
+                    role: event.target.value,
+                  }))
                 }
               >
                 {roleOptions.map((role) => (
@@ -152,7 +202,10 @@ export function AdminDashboardPage() {
               <input
                 value={adminForm.name}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setAdminForm((current) => ({ ...current, name: event.target.value }))
+                  setAdminForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
                 }
                 required
               />
@@ -162,7 +215,10 @@ export function AdminDashboardPage() {
               <input
                 value={adminForm.email}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setAdminForm((current) => ({ ...current, email: event.target.value }))
+                  setAdminForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
                 }
                 type="email"
                 required
@@ -193,7 +249,10 @@ export function AdminDashboardPage() {
               <input
                 checked={adminForm.isSuperAdmin}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setAdminForm((current) => ({ ...current, isSuperAdmin: event.target.checked }))
+                  setAdminForm((current) => ({
+                    ...current,
+                    isSuperAdmin: event.target.checked,
+                  }))
                 }
                 type="checkbox"
               />
@@ -212,25 +271,42 @@ export function AdminDashboardPage() {
               <div>
                 <strong>{managedUser.name}</strong>
                 <p>
-                  {managedUser.email} | {managedUser.role} | {managedUser.status}
+                  {managedUser.email} | {managedUser.role} |{" "}
+                  {managedUser.status}
                 </p>
                 <p>
-                  {managedUser.isAdmin ? 'Admin' : 'Employee'}
-                  {managedUser.isSuperAdmin ? ' | Super admin' : ''}
-                  {managedUser.adminScopes.length ? ` | ${managedUser.adminScopes.join(', ')}` : ''}
+                  {managedUser.isAdmin ? "Admin" : "Employee"}
+                  {managedUser.isSuperAdmin ? " | Super admin" : ""}
+                  {managedUser.adminScopes.length
+                    ? ` | ${managedUser.adminScopes.join(", ")}`
+                    : ""}
                 </p>
               </div>
               <div className="user-actions">
-                <button type="button" onClick={() => void resetPassword(managedUser)}>
+                {adminUser.isSuperAdmin && !managedUser.isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => void viewPassword(managedUser)}
+                  >
+                    View password
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void resetPassword(managedUser)}
+                >
                   Reset password
                 </button>
                 <button
                   type="button"
                   onClick={() =>
-                    void updateStatus(managedUser, managedUser.status === 'Active' ? 'Suspended' : 'Active')
+                    void updateStatus(
+                      managedUser,
+                      managedUser.status === "Active" ? "Suspended" : "Active",
+                    )
                   }
                 >
-                  {managedUser.status === 'Active' ? 'Suspend' : 'Activate'}
+                  {managedUser.status === "Active" ? "Suspend" : "Activate"}
                 </button>
               </div>
             </article>
@@ -246,7 +322,8 @@ export function AdminDashboardPage() {
               <strong>{entry.action}</strong>
               <span>{entry.description}</span>
               <small>
-                {new Date(entry.createdAt).toLocaleString()} | {entry.actor.email}
+                {new Date(entry.createdAt).toLocaleString()} |{" "}
+                {entry.actor.email}
               </small>
             </li>
           ))}

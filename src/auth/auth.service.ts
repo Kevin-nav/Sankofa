@@ -150,6 +150,21 @@ export class AuthService implements OnModuleInit {
     });
   }
 
+  async getDecryptedPassword(userId: number): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, isAdmin: true },
+    });
+
+    if (!user || user.isAdmin) {
+      throw new BadRequestException(
+        "Can only view passwords for non-admin employees.",
+      );
+    }
+
+    return this.decryptPassword(user.passwordHash);
+  }
+
   async resetUserPassword(userId: number, newPassword: string): Promise<User> {
     return this.updatePassword(userId, newPassword, {
       mustChangePassword: true,
